@@ -1,26 +1,221 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-primary: #1F3D2E;
+  --color-brand-primary-hover: #16291F;
+  --color-brand-primary-active: #0F1D15;
+  --color-brand-primary-light: #E7EEE8;
+  --color-brand-primary-disabled: #C9CEC9;
+
+  --color-accent-terracotta: #B5603D;
+  --color-accent-terracotta-light: #F5E4DB;
+  --color-accent-gold: #C9A24B;
+
+  --color-bg-base: #FAF7F2;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-muted: #F1ECE3;
+  --color-bg-header: #FFFFFF;
+  --color-bg-footer: #1A2620;
+
+  --color-text-primary: #211D17;
+  --color-text-secondary: #5C564B;
+  --color-text-tertiary: #8B8578;
+  --color-text-on-brand: #FFFFFF;
+  --color-text-link: #1F3D2E;
+
+  --color-border-subtle: #E8E2D8;
+  --color-border-input: #DAD3C6;
+  --color-border-hover: #D9D0C0;
+
+  --color-success: #2E7D4F;
+  --color-success-bg: #E7F4EC;
+  --color-error: #B3261E;
+  --color-error-bg: #FBEAE7;
+  --color-warning: #B5762B;
+  --color-warning-bg: #FBF0DE;
+  --color-info: #2C5570;
+  --color-info-bg: #EAF0F4;
+
+  --color-badge-bestseller-bg: rgba(201, 162, 75, 0.15);
+  --color-badge-bestseller-text: #8A6C1F;
+  --color-badge-bestseller-border: #C9A24B;
+  --color-badge-discount: #B5603D;
+  --color-badge-new-bg: #E7EEE8;
+  --color-badge-new-text: #1F3D2E;
+  --color-badge-stock-low-bg: #FBEAE7;
+  --color-badge-stock-low-text: #A3352B;
+  --color-badge-digital-bg: #EAF0F4;
+  --color-badge-digital-text: #2C5570;
+
+  --color-footer-text: #D8DED6;
+  --color-footer-legal: rgba(255, 255, 255, 0.6);
+  --color-footer-divider: rgba(255, 255, 255, 0.12);
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.375rem;
+  --text-5xl: 3rem;
+  --text-6xl: 4rem;
+
+  --leading-xs: 1rem;
+  --leading-sm: 1.25rem;
+  --leading-base: 1.5rem;
+  --leading-lg: 1.75rem;
+  --leading-xl: 1.75rem;
+  --leading-2xl: 2rem;
+  --leading-3xl: 2.375rem;
+  --leading-4xl: 2.75rem;
+  --leading-5xl: 3.375rem;
+  --leading-6xl: 4.25rem;
+
+  --tracking-xs: 0.01em;
+  --tracking-sm: 0;
+  --tracking-base: 0;
+  --tracking-lg: -0.005em;
+  --tracking-xl: -0.01em;
+  --tracking-2xl: -0.01em;
+  --tracking-3xl: -0.015em;
+  --tracking-4xl: -0.02em;
+  --tracking-5xl: -0.02em;
+  --tracking-6xl: -0.025em;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(23, 20, 15, 0.04);
+  --shadow-sm: 0 2px 8px rgba(23, 20, 15, 0.06);
+  --shadow-md: 0 8px 24px rgba(23, 20, 15, 0.08);
+  --shadow-lg: 0 16px 40px rgba(23, 20, 15, 0.10);
+  --shadow-xl: 0 24px 64px rgba(23, 20, 15, 0.14);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  --height-btn-sm: 36px;
+  --height-btn-md: 44px;
+  --height-btn-lg: 52px;
+  --height-input: 44px;
+  --height-search: 48px;
+  --height-header: 80px;
+  --height-header-compact: 64px;
+  --height-promo: 32px;
+
+  --container-max: 1440px;
+  --container-text: 720px;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-micro: 150ms;
+  --duration-card: 220ms;
+  --duration-layout: 300ms;
+  --duration-dropdown: 180ms;
+  --duration-toast-in: 250ms;
+  --duration-toast-out: 200ms;
+  --duration-reveal: 500ms;
+  --duration-shimmer: 1500ms;
+  --duration-bounce: 300ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-cart {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+::selection {
+  background-color: var(--color-brand-primary-light);
+  color: var(--color-brand-primary);
 }
