@@ -22,26 +22,62 @@ export function Carousel({
   const [canScrollRight, setCanScrollRight] = useState(true)
   const [activeDot, setActiveDot] = useState(0)
 
-  const checkScroll = useCallback(() => {
+  const checkArrows = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
     setCanScrollLeft(el.scrollLeft > 2)
     setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 2)
-    const childWidth = el.firstElementChild?.clientWidth || 1
-    setActiveDot(Math.round(el.scrollLeft / (childWidth + gap)))
-  }, [gap])
+  }, [])
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    checkScroll()
-    el.addEventListener('scroll', checkScroll, { passive: true })
-    window.addEventListener('resize', checkScroll)
-    return () => {
-      el.removeEventListener('scroll', checkScroll)
-      window.removeEventListener('resize', checkScroll)
+
+    checkArrows()
+
+    const handleScrollEnd = () => {
+      checkArrows()
+      const childWidth = el.firstElementChild?.clientWidth || 1
+      setActiveDot(Math.round(el.scrollLeft / (childWidth + gap)))
     }
-  }, [checkScroll])
+
+    el.addEventListener('scroll', checkArrows, { passive: true })
+    el.addEventListener('scrollend', handleScrollEnd, { passive: true })
+    window.addEventListener('resize', checkArrows)
+
+    return () => {
+      el.removeEventListener('scroll', checkArrows)
+      el.removeEventListener('scrollend', handleScrollEnd)
+      window.removeEventListener('resize', checkArrows)
+    }
+  }, [checkArrows, gap])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !showDots) return
+
+    const items = el.children
+    if (!items.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+            const index = Array.from(items).indexOf(entry.target as Element)
+            if (index !== -1) setActiveDot(index)
+          }
+        })
+      },
+      {
+        root: el,
+        threshold: 0.6,
+      }
+    )
+
+    Array.from(items).forEach((child) => observer.observe(child))
+
+    return () => observer.disconnect()
+  }, [showDots, children.length])
 
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current
@@ -95,10 +131,11 @@ export function Carousel({
                 el?.scrollTo({ left: i * (childWidth + gap), behavior: 'smooth' })
               }}
               className={cn(
-                'w-2 h-2 rounded-full transition-all duration-[var(--duration-micro)]',
-                i === activeDot ? 'bg-brand-primary w-6' : 'bg-border-subtle'
+                'h-2 rounded-full transition-all duration-[var(--duration-micro)]',
+                i === activeDot ? 'bg-brand-primary w-6' : 'bg-border-subtle w-2'
               )}
               aria-label={`Ir a diapositiva ${i + 1}`}
+              aria-current={i === activeDot ? 'true' : undefined}
             />
           ))}
         </div>

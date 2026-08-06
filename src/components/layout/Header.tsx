@@ -23,7 +23,12 @@ export function Header() {
   const pathname = usePathname()
 
   const handleScroll = useCallback(() => {
-    setScrolled(window.scrollY > 80)
+    const y = window.scrollY
+    setScrolled((prev) => {
+      if (prev && y < 60) return false
+      if (!prev && y > 100) return true
+      return prev
+    })
   }, [])
 
   useEffect(() => {
@@ -121,11 +126,14 @@ export function Header() {
         </div>
 
         <nav
-          className={cn(
-            'hidden lg:flex items-center justify-center gap-[var(--space-8)] h-12 border-t border-border-subtle transition-all duration-200',
-            scrolled && 'h-0 opacity-0 overflow-hidden border-0'
-          )}
+          className="hidden lg:flex items-center justify-center gap-[var(--space-8)] h-12 border-t border-border-subtle origin-top transition-[transform,opacity] duration-200 ease-out will-change-[transform,opacity]"
+          style={{
+            transform: scrolled ? 'scaleY(0)' : 'scaleY(1)',
+            opacity: scrolled ? 0 : 1,
+            pointerEvents: scrolled ? 'none' : 'auto',
+          }}
           aria-label="Navegación principal"
+          aria-hidden={scrolled}
         >
           {NAV_ITEMS.map((item) => {
             const hasMegaMenu = 'hasMegaMenu' in item && item.hasMegaMenu
