@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://novabooks.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tuslibrosya.com'
 
   const staticPages = [
     '',
@@ -34,3 +34,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === '' ? 1 : path.startsWith('/libros/') ? 0.8 : 0.5,
   }))
 }
+

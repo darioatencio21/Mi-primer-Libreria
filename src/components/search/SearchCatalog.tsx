@@ -1,114 +1,15 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Image from 'next/image'
+import { useState } from 'react'
 import { SlidersHorizontal, LayoutGrid, List, ChevronDown } from 'lucide-react'
 import { BookCard } from '@/components/product/BookCard'
+import { BookCover } from '@/components/product/BookCover'
 import { FilterSidebar } from '@/components/search/FilterSidebar'
 import { Pagination } from '@/components/ui/Pagination'
-import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { sanitizeSearchQuery } from '@/lib/sanitize'
 import { cn } from '@/lib/utils'
+import { formatArs } from '@/lib/format'
 import type { SearchFilters, Book } from '@/lib/types'
-
-const MOCK_RESULTS: Book[] = [
-  {
-    id: '1',
-    title: 'Cien años de soledad',
-    slug: 'cien-anos-de-soledad',
-    author: { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: '', bookCount: 12 },
-    category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-    description: 'La obra maestra del realismo mágico.',
-    price: 24.99,
-    formats: [{ type: 'paperback', price: 24.99, stock: 15 }],
-    coverImage: '/placeholder-book.svg',
-    images: [],
-    isbn: '978-0-00-000000-0',
-    publisher: 'Editorial Sudamericana',
-    pages: 471,
-    language: 'Español',
-    publishDate: '1967-05-30',
-    rating: 4.8,
-    reviewCount: 2847,
-    stock: 15,
-    isBestseller: true,
-    isNew: false,
-    tags: ['realismo mágico', 'clásico'],
-  },
-  {
-    id: '2',
-    title: 'El amor en los tiempos del cólera',
-    slug: 'amor-tiempos-colera',
-    author: { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: '', bookCount: 12 },
-    category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-    description: 'Una historia de amor que trasciende el tiempo.',
-    price: 22.99,
-    discountPrice: 18.39,
-    discountPercentage: 20,
-    formats: [{ type: 'paperback', price: 18.39, stock: 8 }],
-    coverImage: '/placeholder-book.svg',
-    images: [],
-    isbn: '978-0-00-000000-1',
-    publisher: 'Editorial Sudamericana',
-    pages: 368,
-    language: 'Español',
-    publishDate: '1985-09-05',
-    rating: 4.7,
-    reviewCount: 1923,
-    stock: 8,
-    isBestseller: true,
-    isNew: false,
-    tags: ['romance', 'clásico'],
-  },
-  {
-    id: '3',
-    title: 'Crónica de una muerte anunciada',
-    slug: 'cronica-muerte-anunciada',
-    author: { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: '', bookCount: 12 },
-    category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-    description: 'Un crimen inevitable en un pueblo caribeño.',
-    price: 19.99,
-    formats: [{ type: 'paperback', price: 19.99, stock: 22 }],
-    coverImage: '/placeholder-book.svg',
-    images: [],
-    isbn: '978-0-00-000000-7',
-    publisher: 'Editorial Sudamericana',
-    pages: 122,
-    language: 'Español',
-    publishDate: '1981-04-07',
-    rating: 4.7,
-    reviewCount: 1876,
-    stock: 22,
-    isBestseller: false,
-    isNew: false,
-    tags: ['novela corta', 'clásico'],
-  },
-  {
-    id: '4',
-    title: 'El coronel no tiene quien le escriba',
-    slug: 'coronel-no-tiene-quien-le-escriba',
-    author: { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: '', bookCount: 12 },
-    category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-    description: 'La espera digna de un coronel olvidado.',
-    price: 16.99,
-    formats: [{ type: 'paperback', price: 16.99, stock: 0 }],
-    coverImage: '/placeholder-book.svg',
-    images: [],
-    isbn: '978-0-00-000000-9',
-    publisher: 'Editorial Sudamericana',
-    pages: 92,
-    language: 'Español',
-    publishDate: '1961-01-01',
-    rating: 4.5,
-    reviewCount: 1234,
-    stock: 0,
-    isBestseller: false,
-    isNew: false,
-    tags: ['novela corta', 'clásico'],
-  },
-]
 
 const SORT_OPTIONS = [
   { value: 'relevance', label: 'Relevancia' },
@@ -118,19 +19,49 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Más recientes' },
 ]
 
-function SearchContent() {
-  const searchParams = useSearchParams()
-  const rawQuery = searchParams.get('q') || ''
-  const query = sanitizeSearchQuery(rawQuery)
+const PER_PAGE = 12
 
+interface SearchCatalogProps {
+  books: Book[]
+  query: string
+}
+
+export function SearchCatalog({ books, query }: SearchCatalogProps) {
   const [filters, setFilters] = useState<SearchFilters>({ query })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOpen, setSortOpen] = useState(false)
 
-  const results = MOCK_RESULTS
-  const totalPages = 5
+  let results = books.filter((book) => {
+    if (filters.format && filters.format.length > 0) {
+      if (!book.formats.some((f) => filters.format!.includes(f.type))) return false
+    }
+    if (filters.inStockOnly && book.stock === 0) return false
+    if (filters.priceMin != null && book.price < filters.priceMin) return false
+    if (filters.priceMax != null && book.price > filters.priceMax) return false
+    return true
+  })
+
+  switch (filters.sortBy) {
+    case 'price_asc':
+      results = [...results].sort((a, b) => (a.discountPrice ?? a.price) - (b.discountPrice ?? b.price))
+      break
+    case 'price_desc':
+      results = [...results].sort((a, b) => (b.discountPrice ?? b.price) - (a.discountPrice ?? a.price))
+      break
+    case 'rating':
+      results = [...results].sort((a, b) => b.rating - a.rating)
+      break
+    case 'newest':
+      results = [...results].sort((a, b) => (b.publishDate > a.publishDate ? 1 : -1))
+      break
+    default:
+      break
+  }
+
+  const totalPages = Math.max(1, Math.ceil(results.length / PER_PAGE))
+  const pageBooks = results.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] py-[var(--space-12)]">
@@ -225,7 +156,7 @@ function SearchContent() {
         <FilterSidebar filters={filters} onFilterChange={setFilters} />
 
         <div className="flex-1 min-w-0">
-          {results.length === 0 ? (
+          {pageBooks.length === 0 ? (
             <EmptyState
               variant="search"
               title="No encontramos resultados"
@@ -235,19 +166,19 @@ function SearchContent() {
             />
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[var(--space-6)]">
-              {results.map((book) => (
+              {pageBooks.map((book) => (
                 <BookCard key={book.id} book={book} />
               ))}
             </div>
           ) : (
             <div className="flex flex-col divide-y divide-border-subtle">
-              {results.map((book) => (
+              {pageBooks.map((book) => (
                 <ListViewCard key={book.id} book={book} />
               ))}
             </div>
           )}
 
-          {results.length > 0 && (
+          {results.length > 0 && totalPages > 1 && (
             <div className="mt-[var(--space-12)]">
               <Pagination
                 currentPage={currentPage}
@@ -274,12 +205,13 @@ function ListViewCard({ book }: { book: Book }) {
   return (
     <div className="flex gap-[var(--space-4)] py-[var(--space-6)]">
       <div className="w-24 h-32 shrink-0 rounded-[var(--radius-md)] bg-bg-muted overflow-hidden relative">
-        <Image
-          src={book.coverImage}
-          alt={`Portada de ${book.title}`}
-          fill
+        <BookCover
+          isbn={book.isbn}
+          coverImage={book.coverImage}
+          title={book.title}
+          author={book.author.name}
           sizes="96px"
-          className="object-contain p-2"
+          className="p-2"
         />
       </div>
       <div className="flex-1 min-w-0">
@@ -292,28 +224,11 @@ function ListViewCard({ book }: { book: Book }) {
         </div>
       </div>
       <div className="flex flex-col items-end justify-between shrink-0">
-        <span className="text-lg font-bold text-text-primary">${book.discountPrice || book.price}</span>
+        <span className="text-lg font-bold text-text-primary">{formatArs(book.discountPrice || book.price)}</span>
         <button className="h-[var(--height-btn-sm)] px-[var(--space-4)] rounded-[var(--radius-md)] border border-brand-primary text-brand-primary text-xs font-semibold hover:bg-brand-primary hover:text-text-on-brand transition-all duration-[var(--duration-micro)]">
           Agregar
         </button>
       </div>
     </div>
-  )
-}
-
-export default function SearchPage() {
-  return (
-    <Suspense fallback={
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] py-[var(--space-12)]">
-        <Skeleton variant="text" lines={2} className="mb-[var(--space-8)]" />
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[var(--space-6)]">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} variant="card" />
-          ))}
-        </div>
-      </div>
-    }>
-      <SearchContent />
-    </Suspense>
   )
 }

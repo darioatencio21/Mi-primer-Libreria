@@ -6,6 +6,7 @@ import { X, Tag } from 'lucide-react'
 import { CartItem } from './CartItem'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { formatArs } from '@/lib/format'
 import type { CartItem as CartItemType } from '@/lib/types'
 
 const MOCK_CART_ITEMS: CartItemType[] = [
@@ -114,7 +115,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   }, [])
 
   const applyCoupon = () => {
-    if (couponCode.toUpperCase() === 'NOVA10') {
+    if (couponCode.toUpperCase() === 'TUYA10') {
       setCouponApplied(true)
       setCouponError('')
     } else {
@@ -221,23 +222,23 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <div className="flex flex-col gap-[var(--space-2)] mb-[var(--space-4)]">
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Subtotal</span>
-                  <span className="text-text-primary font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="text-text-primary font-medium">{formatArs(subtotal)}</span>
                 </div>
                 {couponApplied && (
                   <div className="flex justify-between text-sm">
                     <span className="text-success">Descuento (10%)</span>
-                    <span className="text-success font-medium">-${discount.toFixed(2)}</span>
+                    <span className="text-success font-medium">-{formatArs(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Envío estimado</span>
                   <span className="text-text-primary font-medium">
-                    {shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? 'Gratis' : formatArs(shipping)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xl font-bold pt-[var(--space-2)] border-t border-border-subtle">
                   <span className="text-text-primary">Total</span>
-                  <span className="text-text-primary">${total.toFixed(2)}</span>
+                  <span className="text-text-primary">{formatArs(total)}</span>
                 </div>
               </div>
 
@@ -266,3 +267,4 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     </div>
   )
 }
+

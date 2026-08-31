@@ -21,8 +21,8 @@ export function generateProductJsonLd(book: Book) {
     image: book.coverImage,
     offers: {
       '@type': 'Offer',
-      price: book.discountPrice || book.price,
-      priceCurrency: 'USD',
+      price: (book.discountPrice || book.price).toFixed(0),
+      priceCurrency: 'ARS',
       availability: book.stock > 0
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
@@ -46,21 +46,21 @@ export function generateBreadcrumbJsonLd(
       position: index + 1,
       name: item.label,
       item: item.href
-        ? `${process.env.NEXT_PUBLIC_SITE_URL || 'https://novabooks.com'}${item.href}`
+        ? `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tuslibrosya.com'}${item.href}`
         : undefined,
     })),
   }
 }
 
 export function generateOrganizationJsonLd() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://novabooks.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tuslibrosya.com'
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Nova Books',
+    name: 'Tus Libros Ya',
     url: baseUrl,
-    logo: `${baseUrl}/logo.svg`,
+    logo: `${baseUrl}/logo.png`,
     sameAs: [],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -69,3 +69,4 @@ export function generateOrganizationJsonLd() {
     },
   }
 }
+

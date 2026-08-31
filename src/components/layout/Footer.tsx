@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SITE_NAME } from '@/lib/constants'
 
 const FOOTER_LINKS = {
@@ -28,24 +29,14 @@ export function Footer() {
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] py-[var(--space-16)]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[var(--space-10)] lg:gap-[var(--space-8)]">
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-[var(--space-2)] mb-[var(--space-4)]">
-              <svg
-                className="w-6 h-6 text-text-on-brand"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                <path d="M8 7h6" />
-                <path d="M8 11h8" />
-              </svg>
-              <span className="text-[22px] font-display font-medium text-text-on-brand">
-                {SITE_NAME}
-              </span>
+            <Link href="/" className="flex items-center mb-[var(--space-4)]">
+              <Image
+                src="/logo.png"
+                alt={SITE_NAME}
+                width={1254}
+                height={1254}
+                className="h-12 w-auto object-contain"
+              />
             </Link>
             <p className="text-sm text-footer-text max-w-[320px] mb-[var(--space-6)]">
               Librería online premium. Libros físicos, ebooks y audiolibros curados para lectores exigentes.

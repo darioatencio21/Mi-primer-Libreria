@@ -1,4 +1,4 @@
-export const SITE_NAME = 'Nova Books'
+export const SITE_NAME = 'Tus Libros Ya'
 export const SITE_DESCRIPTION = 'Librería online premium — libros físicos, ebooks y audiolibros curados para lectores exigentes.'
 
 export const CATEGORIES = [
@@ -51,5 +51,5 @@ export const BENEFITS = [
 export const PROMO_MESSAGES = [
   'Envío gratis en pedidos desde $50',
   'Devoluciones gratuitas en 30 días',
-  '10% de descuento en tu primera compra con el código NOVA10',
+  '10% de descuento en tu primera compra con el código TUYA10',
 ] as const

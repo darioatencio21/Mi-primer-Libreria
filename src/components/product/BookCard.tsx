@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, Eye, Star } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { BookCover } from './BookCover'
 import { cn } from '@/lib/utils'
+import { formatArs } from '@/lib/format'
 import type { Book } from '@/lib/types'
 
 interface BookCardProps {
@@ -46,13 +47,14 @@ export function BookCard({
         href={`/libros/${book.category.slug}/${book.slug}`}
         className="relative aspect-[3/4] rounded-[var(--radius-md)] bg-bg-muted overflow-hidden mb-[var(--space-4)]"
       >
-        <Image
-          src={book.coverImage}
-          alt={`Portada de ${book.title} por ${book.author.name}`}
-          fill
+        <BookCover
+          isbn={book.isbn}
+          coverImage={book.coverImage}
+          title={book.title}
+          author={book.author.name}
           sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className={cn(
-            'object-contain p-[var(--space-2)] transition-transform duration-[var(--duration-card)]',
+            'p-[var(--space-2)] transition-transform duration-[var(--duration-card)]',
             isOutOfStock && 'opacity-50',
             'group-hover:scale-[1.03]'
           )}
@@ -131,15 +133,15 @@ export function BookCard({
           {book.discountPrice ? (
             <>
               <span className="text-sm text-text-tertiary line-through">
-                ${book.price.toFixed(2)}
+                {formatArs(book.price)}
               </span>
               <span className="text-lg font-bold text-text-primary">
-                ${book.discountPrice.toFixed(2)}
+                {formatArs(book.discountPrice)}
               </span>
             </>
           ) : (
             <span className="text-lg font-bold text-text-primary">
-              ${book.price.toFixed(2)}
+              {formatArs(book.price)}
             </span>
           )}
         </div>

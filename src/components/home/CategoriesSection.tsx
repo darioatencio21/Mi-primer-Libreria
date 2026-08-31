@@ -13,6 +13,7 @@ import {
   Atom,
 } from 'lucide-react'
 import { CATEGORIES } from '@/lib/constants'
+import type { Category } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const iconMap = {
@@ -26,7 +27,11 @@ const iconMap = {
   atom: Atom,
 }
 
-export function CategoriesSection() {
+interface CategoriesSectionProps {
+  categories?: Category[]
+}
+
+export function CategoriesSection({ categories = CATEGORIES as unknown as Category[] }: CategoriesSectionProps) {
   const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
   const sectionRef = useRef<HTMLDivElement>(null)
 
@@ -68,7 +73,7 @@ export function CategoriesSection() {
           ref={sectionRef}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-[var(--space-6)]"
         >
-          {CATEGORIES.map((category, index) => {
+          {categories.map((category, index) => {
             const Icon = iconMap[category.icon as keyof typeof iconMap]
             return (
               <Link

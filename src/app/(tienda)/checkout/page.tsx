@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
 import { sanitizeInput } from '@/lib/sanitize'
+import { formatArs } from '@/lib/format'
 
 type Step = 'shipping' | 'payment' | 'confirmation'
 
@@ -95,7 +96,7 @@ export default function CheckoutPage() {
               <path d="M8 11h8" />
             </svg>
             <span className="text-[22px] font-display font-medium text-brand-primary tracking-tight">
-              Nova Books
+              Tus Libros Ya
             </span>
           </Link>
         </div>
@@ -240,7 +241,7 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <span className="text-sm font-semibold text-text-primary">
-                          {method.price === 0 ? 'Gratis' : `$${method.price.toFixed(2)}`}
+                          {method.price === 0 ? 'Gratis' : formatArs(method.price)}
                         </span>
                       </label>
                     ))}
@@ -402,7 +403,7 @@ export default function CheckoutPage() {
                           <p className="text-xs text-text-tertiary">{item.format} × {item.quantity}</p>
                         </div>
                         <span className="text-sm font-semibold text-text-primary">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {formatArs(item.price * item.quantity)}
                         </span>
                       </div>
                     ))}
@@ -447,7 +448,7 @@ export default function CheckoutPage() {
                         <p className="text-xs text-text-tertiary">{item.format} × {item.quantity}</p>
                       </div>
                       <span className="text-sm font-semibold text-text-primary shrink-0">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {formatArs(item.price * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -456,21 +457,21 @@ export default function CheckoutPage() {
                 <div className="border-t border-border-subtle pt-[var(--space-4)] space-y-[var(--space-2)]">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Subtotal</span>
-                    <span className="text-text-primary">${subtotal.toFixed(2)}</span>
+                    <span className="text-text-primary">{formatArs(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Envío</span>
                     <span className="text-text-primary">
-                      {shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}
+                      {shippingCost === 0 ? 'Gratis' : formatArs(shippingCost)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Impuestos (21%)</span>
-                    <span className="text-text-primary">${tax.toFixed(2)}</span>
+                    <span className="text-text-primary">{formatArs(tax)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-[var(--space-3)] border-t border-border-subtle bg-bg-muted -mx-[var(--space-6)] px-[var(--space-6)] py-[var(--space-3)] rounded-[var(--radius-md)]">
                     <span className="text-text-primary">Total</span>
-                    <span className="text-text-primary">${total.toFixed(2)}</span>
+                    <span className="text-text-primary">{formatArs(total)}</span>
                   </div>
                 </div>
 
@@ -486,3 +487,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+

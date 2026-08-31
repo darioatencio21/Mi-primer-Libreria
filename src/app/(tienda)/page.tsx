@@ -10,13 +10,16 @@ import {
   TestimonialsSection,
   NewsletterSection,
 } from '@/components/home'
+import { getCategorias } from '@/lib/db'
 
-export default function Home() {
+export default async function Home() {
+  const categorias = await getCategorias()
+
   return (
     <>
       <Hero />
       <BenefitsBar />
-      <CategoriesSection />
+      <CategoriesSection categories={categorias} />
       <BestsellersSection />
       <EditorialBanner />
       <RecommendedSection />

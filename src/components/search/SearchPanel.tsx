@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X, Clock, TrendingUp, ArrowRight } from 'lucide-react'
 import { sanitizeSearchQuery } from '@/lib/sanitize'
+import { formatArs } from '@/lib/format'
 
 const MOCK_RECENT = ['García Márquez', 'Sapiens', 'Novela negra']
 const MOCK_TRENDS = ['Haruki Murakami', 'Ciencia ficción', 'Historia', 'Isabel Allende', 'Borges']
@@ -246,7 +247,7 @@ export function SearchPanel({
                         <p className="text-xs text-text-tertiary">{book.author}</p>
                       </div>
                       <span className="text-sm font-semibold text-text-primary shrink-0">
-                        ${book.price.toFixed(2)}
+                        {formatArs(book.price)}
                       </span>
                     </Link>
                   ))}

@@ -1,18 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Carousel } from '@/components/ui/Carousel'
-import type { Author } from '@/lib/types'
+import { getAutores } from '@/lib/db'
 
-const MOCK_AUTHORS: Author[] = [
-  { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: 'Premio Nobel de Literatura 1982', photo: undefined, bookCount: 12 },
-  { id: 'a2', name: 'Haruki Murakami', slug: 'haruki-murakami', bio: 'Maestro del surrealismo contemporáneo', photo: undefined, bookCount: 15 },
-  { id: 'a3', name: 'Yuval Noah Harari', slug: 'yuval-harari', bio: 'Historiador y pensador contemporáneo', photo: undefined, bookCount: 4 },
-  { id: 'a4', name: 'Antoine de Saint-Exupéry', slug: 'saint-exupery', bio: 'Aviador y escritor francés', photo: undefined, bookCount: 3 },
-  { id: 'a5', name: 'Isabel Allende', slug: 'isabel-allende', bio: 'La voz femenina de Latinoamérica', photo: undefined, bookCount: 18 },
-  { id: 'a6', name: 'Jorge Luis Borges', slug: 'jorge-luis-borges', bio: 'Maestro del cuento fantástico', photo: undefined, bookCount: 22 },
-]
+export async function AuthorsSection() {
+  const autores = await getAutores(10)
 
-export function AuthorsSection() {
   return (
     <section className="py-[var(--space-24)]">
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
@@ -29,7 +22,7 @@ export function AuthorsSection() {
         </div>
 
         <Carousel gap={24}>
-          {MOCK_AUTHORS.map((author) => (
+          {autores.map((author) => (
             <Link
               key={author.id}
               href={`/autores/${author.slug}`}

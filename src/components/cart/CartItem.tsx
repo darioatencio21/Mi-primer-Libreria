@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { Minus, Plus, Trash2 } from 'lucide-react'
+import { formatArs } from '@/lib/format'
 import type { CartItem as CartItemType } from '@/lib/types'
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -64,7 +65,7 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
           </div>
 
           <span className="text-sm font-bold text-text-primary">
-            ${(price * item.quantity).toFixed(2)}
+            {formatArs(price * item.quantity)}
           </span>
         </div>
       </div>

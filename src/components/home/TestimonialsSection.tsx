@@ -7,14 +7,14 @@ const MOCK_TESTIMONIALS = [
     name: 'María González',
     role: 'Profesora universitaria',
     rating: 5,
-    quote: 'Nova Books transformó mi forma de descubrir libros. La curaduría es impecable y el servicio es excepcional.',
+    quote: 'Tus Libros Ya transformó mi forma de descubrir libros. La curaduría es impecable y el servicio es excepcional.',
   },
   {
     id: 't2',
     name: 'Carlos Ruiz',
     role: 'Escritor',
     rating: 5,
-    quote: 'Como autor, valoro que una librería entienda la importancia de cada libro. Nova Books lo hace.',
+    quote: 'Como autor, valoro que una librería entienda la importancia de cada libro. Tus Libros Ya lo hace.',
   },
   {
     id: 't3',
@@ -34,7 +34,7 @@ export function TestimonialsSection() {
             Lo que dicen nuestros lectores
           </h2>
           <p className="text-base text-text-secondary max-w-[var(--container-text)] mx-auto">
-            Miles de lectores confían en Nova Books para descubrir su próxima gran lectura.
+            Miles de lectores confían en Tus Libros Ya para descubrir su próxima gran lectura.
           </p>
         </div>
 
@@ -67,3 +67,4 @@ export function TestimonialsSection() {
     </section>
   )
 }
+

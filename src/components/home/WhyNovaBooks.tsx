@@ -29,7 +29,7 @@ export function WhyNovaBooks() {
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
         <div className="text-center mb-[var(--space-12)]">
           <h2 className="text-2xl md:text-4xl font-display font-normal text-text-primary tracking-[var(--tracking-4xl)] mb-[var(--space-4)]">
-            Por qué Nova Books
+            Por qué Tus Libros Ya
           </h2>
           <p className="text-base text-text-secondary max-w-[var(--container-text)] mx-auto">
             No somos solo una librería online. Somos un espacio curado para lectores que valoran tanto el contenido como la experiencia.
@@ -56,3 +56,4 @@ export function WhyNovaBooks() {
     </section>
   )
 }
+
