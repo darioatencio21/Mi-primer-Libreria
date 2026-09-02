@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Carousel } from '@/components/ui/Carousel'
-import { getAutores } from '@/lib/db'
+import { getFeaturedAuthors } from '@/lib/data'
+import { AuthorAvatar } from '@/components/ui/AuthorAvatar'
 
 export async function AuthorsSection() {
-  const autores = await getAutores(10)
+  const autores = await getFeaturedAuthors(10)
 
   return (
     <section className="py-[var(--space-24)]">
@@ -29,31 +29,7 @@ export async function AuthorsSection() {
               className="w-[200px] flex flex-col items-center text-center group"
             >
               <div className="w-32 h-32 rounded-full bg-bg-muted border-2 border-border-subtle overflow-hidden mb-[var(--space-4)] group-hover:border-brand-primary transition-colors duration-200">
-                {author.photo ? (
-                  <Image
-                    src={author.photo}
-                    alt={author.name}
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-tertiary">
-                    <svg
-                      className="w-16 h-16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="8" r="4" />
-                      <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-                    </svg>
-                  </div>
-                )}
+                <AuthorAvatar name={author.name} photo={author.photo} variant="circle" sizes="128px" />
               </div>
               <h3 className="text-base font-semibold text-text-primary mb-[var(--space-1)] group-hover:text-brand-primary transition-colors duration-[var(--duration-micro)]">
                 {author.name}

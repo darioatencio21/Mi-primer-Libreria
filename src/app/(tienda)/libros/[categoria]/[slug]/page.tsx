@@ -1,40 +1,50 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ProductView, type ReviewView } from '@/components/catalog/ProductView'
-import { getLibroPorSlug, getResenasDeLibro, getLibrosRelacionados } from '@/lib/db'
+import { ProductView } from '@/components/product/ProductView'
+import { getBookBySlug, getBookParams } from '@/lib/data'
 
-interface PageProps {
+export const revalidate = 3600
+
+interface ProductPageProps {
   params: Promise<{ categoria: string; slug: string }>
 }
 
-export default async function ProductPage({ params }: PageProps) {
-  const { slug } = await params
+export async function generateStaticParams() {
+  return getBookParams()
+}
 
-  const book = await getLibroPorSlug(slug)
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const book = await getBookBySlug(slug)
+
+  if (!book) {
+    return { title: 'Libro no encontrado' }
+  }
+
+  return {
+    title: `${book.title} · ${book.author.name}`,
+    description: book.description.slice(0, 155),
+    openGraph: {
+      title: `${book.title} · ${book.author.name}`,
+      description: book.description.slice(0, 155),
+      type: 'book',
+      images: [{ url: book.coverImage }],
+    },
+    alternates: {
+      canonical: `/libros/${book.category.slug}/${book.slug}`,
+    },
+  }
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { slug } = await params
+  const book = await getBookBySlug(slug)
+
   if (!book) {
     notFound()
   }
 
-  const [resenasRaw, related] = await Promise.all([
-    getResenasDeLibro(book.id),
-    getLibrosRelacionados(book.id, book.category.slug, 8),
-  ])
-
-  const resenas: ReviewView[] = resenasRaw.map((r) => ({
-    id: r.id,
-    userName: r.userName,
-    rating: r.rating,
-    date: r.date,
-    title: r.title,
-    content: r.content,
-    helpful: r.helpful,
-  }))
-
-  return (
-    <ProductView
-      book={book}
-      reviews={resenas}
-      related={related}
-      categoryName={book.category.name}
-    />
-  )
+  return <ProductView book={book} />
 }

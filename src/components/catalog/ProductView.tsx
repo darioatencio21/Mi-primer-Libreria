@@ -92,6 +92,7 @@ export function ProductView({ book, reviews, related, categoryName }: ProductVie
                   variant="natural"
                   width={64}
                   height={80}
+                  coverSize="S"
                   className="w-full h-full object-contain p-1"
                 />
               </button>
@@ -105,6 +106,7 @@ export function ProductView({ book, reviews, related, categoryName }: ProductVie
               title={book.title}
               author={book.author.name}
               sizes="(max-width: 1024px) 100vw, 45vw"
+              coverSize="L"
               className="p-[var(--space-8)]"
               priority
             />

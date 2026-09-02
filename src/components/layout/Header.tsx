@@ -60,22 +60,15 @@ export function Header() {
     setMobileMenuOpen(false)
   }, [pathname])
 
-  const barHeight = scrolled ? 'var(--height-header-compact)' : 'var(--height-header)'
-
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 w-full transition-all duration-200',
-        scrolled
-          ? 'bg-bg-header/90 backdrop-blur-xl shadow-[var(--shadow-sm)] border-b border-border-subtle'
-          : 'bg-bg-header border-b border-transparent'
+        'sticky top-0 z-40 w-full bg-bg-header transition-[box-shadow,border-color] duration-200',
+        scrolled && 'shadow-[var(--shadow-sm)] border-b border-border-subtle'
       )}
     >
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-4)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
-        <div
-          className="flex items-center justify-between transition-[height] duration-200"
-          style={{ height: barHeight }}
-        >
+        <div className="flex items-center justify-between h-[var(--height-header)]">
           <div className="flex items-center gap-[var(--space-2)] md:gap-[var(--space-4)]">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -97,10 +90,7 @@ export function Header() {
                 width={1254}
                 height={1254}
                 priority
-                className={cn(
-                  'h-9 md:h-10 w-auto object-contain transition-[height] duration-200',
-                  scrolled && 'h-8'
-                )}
+                className="h-9 md:h-10 w-auto object-contain"
               />
             </Link>
           </div>
@@ -148,16 +138,10 @@ export function Header() {
           </div>
         </div>
 
-        <div
-          className="hidden lg:grid transition-[grid-template-rows] duration-200 ease-out"
-          style={{ gridTemplateRows: scrolled ? '0fr' : '1fr' }}
+        <nav
+          className="hidden lg:flex items-center justify-center gap-[var(--space-8)] h-12 border-t border-border-subtle"
+          aria-label="Navegación principal"
         >
-          <div className="min-h-0 overflow-hidden">
-            <nav
-              className="flex items-center justify-center gap-[var(--space-8)] h-12 border-t border-border-subtle"
-              aria-label="Navegación principal"
-              aria-hidden={scrolled}
-            >
               {NAV_ITEMS.map((item) => {
                 const hasMegaMenu = 'hasMegaMenu' in item && item.hasMegaMenu
                 const isHighlight = 'highlight' in item && item.highlight
@@ -188,8 +172,6 @@ export function Header() {
                 )
               })}
             </nav>
-          </div>
-        </div>
       </div>
 
       {mobileMenuOpen && (

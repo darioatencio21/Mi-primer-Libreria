@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X, Clock, TrendingUp, ArrowRight } from 'lucide-react'
 import { sanitizeSearchQuery } from '@/lib/sanitize'
-import { formatArs } from '@/lib/format'
+import { formatArs, usdToArs } from '@/lib/format'
 
 const MOCK_RECENT = ['García Márquez', 'Sapiens', 'Novela negra']
 const MOCK_TRENDS = ['Haruki Murakami', 'Ciencia ficción', 'Historia', 'Isabel Allende', 'Borges']
@@ -230,8 +230,8 @@ export function SearchPanel({
                     Libros
                   </p>
                   {[
-                    { id: '1', title: 'Cien años de soledad', author: 'Gabriel García Márquez', price: 24.99, coverImage: '/placeholder-book.svg', slug: 'cien-anos-de-soledad', categorySlug: 'ficcion' },
-                    { id: '2', title: 'El amor en los tiempos del cólera', author: 'Gabriel García Márquez', price: 18.39, coverImage: '/placeholder-book.svg', slug: 'amor-tiempos-colera', categorySlug: 'ficcion' },
+                    { id: '1', title: 'Cien años de soledad', author: 'Gabriel García Márquez', price: usdToArs(24.99), coverImage: '/placeholder-book.svg', slug: 'cien-anos-de-soledad', categorySlug: 'ficcion' },
+                    { id: '2', title: 'El amor en los tiempos del cólera', author: 'Gabriel García Márquez', price: usdToArs(18.39), coverImage: '/placeholder-book.svg', slug: 'amor-tiempos-colera', categorySlug: 'ficcion' },
                   ].map((book) => (
                     <Link
                       key={book.id}

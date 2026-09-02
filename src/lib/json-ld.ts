@@ -1,4 +1,5 @@
 import type { Book } from '@/lib/types'
+import { getBookDisplayPrice } from '@/lib/book-price'
 
 export function generateProductJsonLd(book: Book) {
   return {
@@ -21,7 +22,7 @@ export function generateProductJsonLd(book: Book) {
     image: book.coverImage,
     offers: {
       '@type': 'Offer',
-      price: (book.discountPrice || book.price).toFixed(0),
+      price: getBookDisplayPrice(book).toFixed(2),
       priceCurrency: 'ARS',
       availability: book.stock > 0
         ? 'https://schema.org/InStock'

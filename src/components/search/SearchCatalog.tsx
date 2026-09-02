@@ -9,6 +9,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 import { formatArs } from '@/lib/format'
+import { getBookDisplayPrice } from '@/lib/book-price'
 import type { SearchFilters, Book } from '@/lib/types'
 
 const SORT_OPTIONS = [
@@ -211,6 +212,7 @@ function ListViewCard({ book }: { book: Book }) {
           title={book.title}
           author={book.author.name}
           sizes="96px"
+          coverSize="S"
           className="p-2"
         />
       </div>
@@ -224,7 +226,7 @@ function ListViewCard({ book }: { book: Book }) {
         </div>
       </div>
       <div className="flex flex-col items-end justify-between shrink-0">
-        <span className="text-lg font-bold text-text-primary">{formatArs(book.discountPrice || book.price)}</span>
+        <span className="text-lg font-bold text-text-primary">{formatArs(getBookDisplayPrice(book))}</span>
         <button className="h-[var(--height-btn-sm)] px-[var(--space-4)] rounded-[var(--radius-md)] border border-brand-primary text-brand-primary text-xs font-semibold hover:bg-brand-primary hover:text-text-on-brand transition-all duration-[var(--duration-micro)]">
           Agregar
         </button>

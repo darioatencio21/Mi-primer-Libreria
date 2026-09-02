@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { BookCard } from '@/components/product/BookCard'
 import { Carousel } from '@/components/ui/Carousel'
-import { getBestsellers } from '@/lib/db'
+import { getBestsellers } from '@/lib/data'
 
 export async function BestsellersSection() {
   const bestsellers = await getBestsellers(10)

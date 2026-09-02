@@ -24,6 +24,9 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     .toUpperCase()
   const title = (request.nextUrl.searchParams.get('t') || '').trim()
   const author = (request.nextUrl.searchParams.get('a') || '').trim()
+  // Tamaño de Open Library: S (miniaturas ~36px), M (tarjetas ~180px), L (vista grande ~317px)
+  const size = (request.nextUrl.searchParams.get('size') || 'M').toUpperCase()
+  const coverSize = ['S', 'M', 'L'].includes(size) ? size : 'M'
 
   const CACHE = {
     'Content-Type': 'image/jpeg',
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
   async function coverFromId(coverId: number | undefined) {
     if (!coverId) return null
-    const img = await fetch(`https://covers.openlibrary.org/b/id/${coverId}-L.jpg`, {
+    const img = await fetch(`https://covers.openlibrary.org/b/id/${coverId}-${coverSize}.jpg`, {
       signal: AbortSignal.timeout(6000),
     })
     if (!img.ok) return null

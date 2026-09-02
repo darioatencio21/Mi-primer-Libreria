@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { BookCard } from '@/components/product/BookCard'
-import { getRecomendados } from '@/lib/db'
+import { getNewReleases } from '@/lib/data'
 
 export async function RecommendedSection() {
-  const libros = await getRecomendados(8)
+  const libros = await getNewReleases(8)
 
   return (
     <section className="py-[var(--space-24)] bg-bg-muted">

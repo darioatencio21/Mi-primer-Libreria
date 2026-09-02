@@ -43,3 +43,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 supabase/.temp/
+
+# source images (raw)
+/ChatGPT Image *.png
+/foto libros hero.png

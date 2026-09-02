@@ -8,6 +8,7 @@ import { Button } from '../ui/Button'
 import { BookCover } from './BookCover'
 import { cn } from '@/lib/utils'
 import { formatArs } from '@/lib/format'
+import { hasBookDiscount, getBookDisplayPrice } from '@/lib/book-price'
 import type { Book } from '@/lib/types'
 
 interface BookCardProps {
@@ -27,6 +28,8 @@ export function BookCard({
 }: BookCardProps) {
   const [wishlistAnimating, setWishlistAnimating] = useState(false)
   const isOutOfStock = book.stock === 0
+  const showDiscount = hasBookDiscount(book)
+  const displayPrice = getBookDisplayPrice(book)
 
   const handleWishlist = () => {
     setWishlistAnimating(true)
@@ -130,18 +133,18 @@ export function BookCard({
         </div>
 
         <div className="flex items-center gap-[var(--space-2)] mt-auto pt-[var(--space-3)]">
-          {book.discountPrice ? (
+          {showDiscount ? (
             <>
               <span className="text-sm text-text-tertiary line-through">
                 {formatArs(book.price)}
               </span>
               <span className="text-lg font-bold text-text-primary">
-                {formatArs(book.discountPrice)}
+                {formatArs(displayPrice)}
               </span>
             </>
           ) : (
             <span className="text-lg font-bold text-text-primary">
-              {formatArs(book.price)}
+              {formatArs(displayPrice)}
             </span>
           )}
         </div>

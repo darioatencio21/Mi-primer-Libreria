@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -36,24 +37,15 @@ export function Hero() {
         <div className="relative hidden lg:block animate-[scaleIn_700ms_ease-out]">
           <div className="absolute inset-0 bg-gradient-to-r from-bg-muted via-bg-muted/60 to-transparent z-10 pointer-events-none" />
           <div className="absolute inset-0 flex items-center justify-center p-[var(--space-8)]">
-            <div className="relative w-full h-full max-w-[400px] max-h-[500px] rounded-[20px] overflow-hidden shadow-[var(--shadow-xl)] bg-gradient-to-br from-brand-primary/10 to-accent-terracotta/10">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg
-                  className="w-32 h-32 text-brand-primary/30"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={0.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                  <path d="M8 7h6" />
-                  <path d="M8 11h8" />
-                  <path d="M8 15h4" />
-                </svg>
-              </div>
+            <div className="relative w-full max-w-[560px] aspect-[1490/1056]">
+              <Image
+                src="/foto-libros-chatgpt.webp"
+                alt="Pila de libros de la colección"
+                fill
+                sizes="560px"
+                priority
+                className="object-cover"
+              />
             </div>
           </div>
         </div>
