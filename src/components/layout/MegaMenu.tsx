@@ -100,7 +100,7 @@ export function MegaMenu() {
                 </p>
               </div>
               <Link
-                href="/libros/colecciones/otono"
+                href="/libros/otono"
                 className="mt-[var(--space-4)] inline-flex items-center text-sm font-semibold text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px]"
               >
                 Explorar colección →

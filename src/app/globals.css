@@ -11,6 +11,12 @@
   --color-accent-terracotta-light: #F7E4D8;
   --color-accent-gold: #C9A24B;
 
+  --color-accent-forest: #3D6B4F;
+  --color-accent-forest-dark: #2E5240;
+  --color-accent-forest-light: #EAF1E8;
+  --color-accent-petrol: #2C5570;
+  --color-accent-petrol-light: #E6EFF3;
+
   --color-bg-base: #FBF7F1;
   --color-bg-surface: #FFFFFF;
   --color-bg-elevated: #FFFFFF;
@@ -186,6 +192,17 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes leaf-drift {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: var(--leaf-opacity, 0.35);
+  }
+  50% {
+    transform: translateY(24px) rotate(12deg);
+    opacity: calc(var(--leaf-opacity, 0.35) * 0.6);
+  }
 }
 
 @keyframes scaleIn {

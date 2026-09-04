@@ -1,0 +1,38 @@
+# Dependencias
+node_modules
+npm-debug.log*
+.npm
+
+# Builds
+.next
+out
+dist
+build
+
+# Git y entorno
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+.env*.local
+*.md
+
+# Next.js
+.next/*
+!.next/BUILD_ID
+
+# Init SQL de la db (se monta como volumen, no va en la imagen del app)
+db/init
+
+# Dockers
+Dockerfile
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+
+# Otros
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store

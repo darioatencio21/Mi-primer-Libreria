@@ -1,0 +1,63 @@
+# ============================================================
+#  TU LIBROS YA — Compose de PRODUCCIÓN (app + postgres)
+#
+#  Todo el stack corre en Docker, sin servicios externos:
+#   - db:  PostgreSQL 16 con el esquema + seed (db/init) aplicados
+#          automáticamente la primera vez (volumen persistente).
+#   - app: build multi-stage (standalone) conectada a la db.
+#
+#  Levantar:
+#      docker compose --env-file .env.docker up -d --build
+#
+#  La app queda en http://localhost:3000
+#  El postgres expuesto en localhost:5432 (para herramientas).
+# ============================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tuslibrosya-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-librostuc}
+      POSTGRES_DB: ${POSTGRES_DB:-librostuc}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-librostuc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: runner
+    image: tuslibrosya-app:latest
+    container_name: tuslibrosya-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-librostuc}@db:5432/${POSTGRES_DB:-librostuc}
+      ADMIN_PASS: ${ADMIN_PASS}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
+      AR_USD_RATE: ${AR_USD_RATE:-1300}
+      CATALOG_PROVIDER: ${CATALOG_PROVIDER:-postgres}
+      ORDERS_PROVIDER: ${ORDERS_PROVIDER:-postgres}
+      INVENTORY_PROVIDER: ${INVENTORY_PROVIDER:-postgres}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-manual}
+
+networks:
+  default:
+    name: tuslibrosya-net
+
+volumes:
+  pgdata:

@@ -18,7 +18,7 @@ export function EditorialBanner() {
               Una selección de obras que capturan el espíritu de nuestro tiempo. Ensayos, novelas y memorias que invitan a la reflexión.
             </p>
             <Link
-              href="/libros/colecciones/voces-contemporaneas"
+              href="/libros/voces-contemporaneas"
               className="inline-flex items-center justify-center h-[var(--height-btn-md)] px-[var(--space-6)] bg-bg-surface text-brand-primary font-semibold text-sm rounded-[var(--radius-md)] hover:bg-accent-terracotta hover:text-text-on-brand transition-all duration-[var(--duration-micro)]"
             >
               Descubrir colección

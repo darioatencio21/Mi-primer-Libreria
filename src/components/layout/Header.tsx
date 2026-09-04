@@ -56,9 +56,11 @@ export function Header() {
     }
   }, [mobileMenuOpen])
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
     setMobileMenuOpen(false)
-  }, [pathname])
+  }
 
   return (
     <header
@@ -67,8 +69,8 @@ export function Header() {
         scrolled && 'shadow-[var(--shadow-sm)] border-b border-border-subtle'
       )}
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-4)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
-        <div className="flex items-center justify-between h-[var(--height-header)]">
+      <div className="w-full flex items-center h-[var(--height-header)]">
+        <div className="mx-auto max-w-[var(--container-max)] w-full h-full flex items-center justify-between px-[var(--space-4)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
           <div className="flex items-center gap-[var(--space-2)] md:gap-[var(--space-4)]">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -105,8 +107,9 @@ export function Header() {
               <span>Busca por título, autor, ISBN o editorial...</span>
             </button>
           </div>
+        </div>
 
-          <div className="flex items-center gap-[var(--space-1)]">
+          <div className="flex items-center gap-[var(--space-1)] ml-auto pr-[var(--space-1)] md:pr-[var(--space-10)] lg:pr-[var(--space-16)]">
             <button
               onClick={() => setSearchOpen(true)}
               className="md:hidden p-[var(--space-2)] text-text-primary hover:text-brand-primary hover:scale-105 transition-all duration-[var(--duration-micro)]"
@@ -136,12 +139,12 @@ export function Header() {
               <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
             </Link>
           </div>
-        </div>
+      </div>
 
-        <nav
-          className="hidden lg:flex items-center justify-center gap-[var(--space-8)] h-12 border-t border-border-subtle"
-          aria-label="Navegación principal"
-        >
+      <nav
+        className="hidden lg:flex items-center justify-center gap-[var(--space-8)] h-12 px-[var(--space-4)] border-t border-border-subtle bg-bg-header w-full"
+        aria-label="Navegación principal"
+      >
               {NAV_ITEMS.map((item) => {
                 const hasMegaMenu = 'hasMegaMenu' in item && item.hasMegaMenu
                 const isHighlight = 'highlight' in item && item.highlight
@@ -172,7 +175,6 @@ export function Header() {
                 )
               })}
             </nav>
-      </div>
 
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 top-[var(--height-header)] bg-bg-base/40 backdrop-blur-sm z-30 md:hidden" onClick={() => setMobileMenuOpen(false)}>

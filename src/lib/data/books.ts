@@ -1,8 +1,19 @@
 import { cache } from 'react'
-import { createDataClient } from './client'
+import { and, asc, desc, eq, ilike, inArray, isNotNull, ne, or } from 'drizzle-orm'
+import { db } from '@/lib/db/client'
+import {
+  authors as authorsTable,
+  books as booksTable,
+  bookFormats,
+  bookImages,
+  bookTags,
+  categories as categoriesTable,
+} from '@/lib/db/schema'
 import {
   mapBook,
+  type AuthorRow,
   type BookRow,
+  type CategoryRow,
   type FormatRow,
   type ImageRow,
   type TagRow,
@@ -17,177 +28,202 @@ interface QueryOptions {
   isNew?: boolean
   hasDiscount?: boolean
   excludeBookId?: string
-  recommended?: boolean
   formatType?: BookFormat['type']
   tag?: string
-  order?: { column: string; ascending?: boolean; nullsFirst?: boolean }
+  order?: { column: string; ascending?: boolean }
   limit?: number
 }
 
-async function queryBooks(options: QueryOptions): Promise<Book[]> {
-  const supabase = createDataClient()
-
-  let query = supabase
-    .from('books')
-    .select('*, author:author_id(id, name, slug, bio, photo_url), category:category_id(id, name, slug, description, icon)')
-
-  if (options.categorySlug) {
-    const { data: category, error: categoryError } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', options.categorySlug)
-      .maybeSingle()
-
-    if (categoryError) throw categoryError
-    if (!category) return []
-
-    query = query.eq('category_id', category.id)
+function ordering(column: string) {
+  switch (column) {
+    case 'rating':
+      return booksTable.rating
+    case 'title':
+      return booksTable.title
+    case 'publish_date':
+      return booksTable.publishDate
+    case 'discount_percentage':
+      return booksTable.discountPercentage
+    default:
+      return booksTable.createdAt
   }
-  if (options.categoryId) {
-    query = query.eq('category_id', options.categoryId)
-  }
-  if (options.authorId) {
-    query = query.eq('author_id', options.authorId)
-  }
-  if (options.isBestseller) {
-    query = query.eq('is_bestseller', true)
-  }
-  if (options.isNew) {
-    query = query.eq('is_new', true)
-  }
-  if (options.hasDiscount) {
-    query = query.not('discount_price', 'is', null)
-  }
-  if (options.excludeBookId) {
-    query = query.neq('id', options.excludeBookId)
-  }
-  if (options.formatType) {
-    const { data: formatBookIds, error: formatError } = await supabase
-      .from('book_formats')
-      .select('book_id')
-      .eq('type', options.formatType)
-
-    if (formatError) throw formatError
-    const ids = (formatBookIds ?? []).map((row) => row.book_id)
-    if (ids.length === 0) return []
-    query = query.in('id', ids)
-  }
-  if (options.tag) {
-    const { data: tagBookIds, error: tagError } = await supabase
-      .from('book_tags')
-      .select('book_id')
-      .ilike('tag', `%${options.tag}%`)
-
-    if (tagError) throw tagError
-    const ids = (tagBookIds ?? []).map((row) => row.book_id)
-    if (ids.length === 0) return []
-    query = query.in('id', ids)
-  }
-
-  if (options.order) {
-    query = query.order(options.order.column, {
-      ascending: options.order.ascending ?? true,
-      nullsFirst: options.order.nullsFirst ?? false,
-    })
-  }
-
-  if (options.limit) {
-    query = query.limit(options.limit)
-  }
-
-  const { data, error } = await query
-  if (error) throw error
-  if (!data || data.length === 0) return []
-
-  return hydrateBooks(data as unknown as BookRow[])
 }
 
-export async function hydrateBooks(rows: BookRow[]): Promise<Book[]> {
-  const ids = rows.map((row) => row.id)
-  const supabase = createDataClient()
+function toBookRow(
+  row: typeof booksTable.$inferSelect,
+  author: ReturnType<typeof toAuthorRow> | undefined,
+  category: ReturnType<typeof toCategoryRow> | undefined
+): BookRow {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    isbn: row.isbn,
+    publisher: row.publisher,
+    pages: row.pages,
+    language: row.language,
+    publish_date: row.publishDate,
+    dimensions: row.dimensions,
+    price: row.price,
+    discount_price: row.discountPrice,
+    discount_percentage: row.discountPercentage,
+    rating: row.rating,
+    review_count: row.reviewCount,
+    stock: row.stock,
+    is_bestseller: row.isBestseller,
+    is_new: row.isNew,
+    cover_image_url: row.coverImageUrl,
+    author_id: row.authorId,
+    category_id: row.categoryId,
+    author: author ?? { id: '', name: '', slug: '', bio: '', photo_url: null },
+    category: category ?? { id: '', name: '', slug: '', description: '', icon: null },
+  }
+}
 
-  const [formatsRes, imagesRes, tagsRes] = await Promise.all([
-    supabase.from('book_formats').select('book_id, type, price, stock').in('book_id', ids),
-    supabase.from('book_images').select('book_id, url, position').in('book_id', ids).order('position'),
-    supabase.from('book_tags').select('book_id, tag').in('book_id', ids),
+function toAuthorRow(row: typeof authorsTable.$inferSelect | undefined): AuthorRow | undefined {
+  if (!row) return undefined
+  return { id: row.id, name: row.name, slug: row.slug, bio: row.bio, photo_url: row.photoUrl }
+}
+
+function toCategoryRow(row: typeof categoriesTable.$inferSelect | undefined): CategoryRow | undefined {
+  if (!row) return undefined
+  return { id: row.id, name: row.name, slug: row.slug, description: row.description, icon: row.icon }
+}
+
+interface HydratedBook {
+  row: BookRow
+  formats: FormatRow[]
+  images: ImageRow[]
+  tags: TagRow[]
+}
+
+async function hydrateBooks2(rows: (typeof booksTable.$inferSelect)[]): Promise<HydratedBook[]> {
+  if (rows.length === 0) return []
+
+  const ids = rows.map((r) => r.id)
+
+  const [formatRows, imageRows, tagRows, authorRows, categoryRows] = await Promise.all([
+    db.select().from(bookFormats).where(inArray(bookFormats.bookId, ids)),
+    db.select().from(bookImages).where(inArray(bookImages.bookId, ids)).orderBy(asc(bookImages.position)),
+    db.select().from(bookTags).where(inArray(bookTags.bookId, ids)),
+    db.select().from(authorsTable).where(inArray(authorsTable.id, [...new Set(rows.map((r) => r.authorId))])),
+    db.select().from(categoriesTable).where(inArray(categoriesTable.id, [...new Set(rows.map((r) => r.categoryId))])),
   ])
 
-  if (formatsRes.error) throw formatsRes.error
-  if (imagesRes.error) throw imagesRes.error
-  if (tagsRes.error) throw tagsRes.error
+  const authorMap = new Map(authorRows.map((a) => [a.id, toAuthorRow(a)]))
+  const categoryMap = new Map(categoryRows.map((c) => [c.id, toCategoryRow(c)]))
 
-  const formats = (formatsRes.data ?? []) as FormatRow[]
-  const images = (imagesRes.data ?? []) as ImageRow[]
-  const tags = (tagsRes.data ?? []) as TagRow[]
+  const formatsByBook = groupBy(formatRows, (f) => f.bookId)
+  const imagesByBook = groupBy(imageRows, (i) => i.bookId)
+  const tagsByBook = groupBy(tagRows, (t) => t.bookId)
 
-  return rows.map((row) => mapBook(row, formats, images, tags))
+  return rows.map((row) => ({
+    row: toBookRow(row, authorMap.get(row.authorId), categoryMap.get(row.categoryId)),
+    formats: (formatsByBook.get(row.id) ?? []) as unknown as FormatRow[],
+    images: (imagesByBook.get(row.id) ?? []) as unknown as ImageRow[],
+    tags: (tagsByBook.get(row.id) ?? []) as unknown as TagRow[],
+  }))
+}
+
+function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
+  const map = new Map<string, T[]>()
+  for (const item of items) {
+    const k = key(item)
+    const list = map.get(k) ?? []
+    list.push(item)
+    map.set(k, list)
+  }
+  return map
+}
+
+function toBook(hydrated: HydratedBook): Book {
+  return mapBook(hydrated.row, hydrated.formats, hydrated.images, hydrated.tags)
+}
+
+async function queryBooks(options: QueryOptions): Promise<Book[]> {
+  const conditions = []
+
+  if (options.categorySlug) {
+    const category = await db.query.categories.findFirst({ where: eq(categoriesTable.slug, options.categorySlug) })
+    if (!category) return []
+    conditions.push(eq(booksTable.categoryId, category.id))
+  }
+  if (options.categoryId) conditions.push(eq(booksTable.categoryId, options.categoryId))
+  if (options.authorId) conditions.push(eq(booksTable.authorId, options.authorId))
+  if (options.isBestseller) conditions.push(eq(booksTable.isBestseller, true))
+  if (options.isNew) conditions.push(eq(booksTable.isNew, true))
+  if (options.hasDiscount) conditions.push(isNotNull(booksTable.discountPrice))
+  if (options.excludeBookId) conditions.push(ne(booksTable.id, options.excludeBookId))
+
+  if (options.formatType) {
+    const formatRows = await db.select({ bookId: bookFormats.bookId }).from(bookFormats).where(eq(bookFormats.type, options.formatType))
+    const ids = formatRows.map((r) => r.bookId)
+    if (ids.length === 0) return []
+    conditions.push(inArray(booksTable.id, ids))
+  }
+
+  if (options.tag) {
+    const tagRows = await db.select({ bookId: bookTags.bookId }).from(bookTags).where(ilike(bookTags.tag, `%${options.tag}%`))
+    const ids = tagRows.map((r) => r.bookId)
+    if (ids.length === 0) return []
+    conditions.push(inArray(booksTable.id, ids))
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+  const orderByColumn = options.order
+    ? options.order.ascending === false
+      ? desc(ordering(options.order.column))
+      : asc(ordering(options.order.column))
+    : undefined
+
+  const rows = await db
+    .select()
+    .from(booksTable)
+    .where(where)
+    .orderBy(orderByColumn ?? asc(booksTable.title))
+    .limit(options.limit ?? 100)
+
+  const hydrated = await hydrateBooks2(rows)
+  return hydrated.map(toBook)
 }
 
 export const getBookBySlug = cache(async (slug: string): Promise<Book | null> => {
-  const supabase = createDataClient()
-
-  const { data, error } = await supabase
-    .from('books')
-    .select('*, author:author_id(id, name, slug, bio, photo_url), category:category_id(id, name, slug, description, icon)')
-    .eq('slug', slug)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!data) return null
-
-  const books = await hydrateBooks([data as unknown as BookRow])
-  return books[0] ?? null
+  const row = await db.query.books.findFirst({ where: eq(booksTable.slug, slug) })
+  if (!row) return null
+  const [hydrated] = await hydrateBooks2([row])
+  return hydrated ? toBook(hydrated) : null
 })
 
 export const getBooksByIds = cache(async (ids: string[]): Promise<Book[]> => {
   if (ids.length === 0) return []
-
-  const supabase = createDataClient()
-  const { data, error } = await supabase
-    .from('books')
-    .select('*, author:author_id(id, name, slug, bio, photo_url), category:category_id(id, name, slug, description, icon)')
-    .in('id', ids)
-
-  if (error) throw error
-  if (!data || data.length === 0) return []
-
-  return hydrateBooks(data as unknown as BookRow[])
+  const rows = await db.select().from(booksTable).where(inArray(booksTable.id, ids))
+  const hydrated = await hydrateBooks2(rows)
+  return hydrated.map(toBook)
 })
 
-export const getBooksByAuthor = cache(
-  async (authorSlug: string): Promise<Book[]> => {
-    const supabase = createDataClient()
-
-    const { data: author, error: authorError } = await supabase
-      .from('authors')
-      .select('id')
-      .eq('slug', authorSlug)
-      .maybeSingle()
-
-    if (authorError) throw authorError
-    if (!author) return []
-
-    return queryBooks({
-      authorId: author.id,
-      order: { column: 'title' },
-    })
-  }
-)
+export const getBooksByAuthor = cache(async (authorSlug: string): Promise<Book[]> => {
+  const author = await db.query.authors.findFirst({ where: eq(authorsTable.slug, authorSlug) })
+  if (!author) return []
+  return queryBooks({ authorId: author.id, order: { column: 'title' } })
+})
 
 export const getBestsellers = cache(async (limit = 8): Promise<Book[]> => {
-  return queryBooks({
-    isBestseller: true,
-    order: { column: 'rating', ascending: false },
-    limit,
-  })
+  try {
+    return await queryBooks({ isBestseller: true, order: { column: 'rating', ascending: false }, limit })
+  } catch (err) {
+    console.warn('No se pudieron cargar bestsellers:', err)
+    return []
+  }
 })
 
 export const getNewReleases = cache(async (limit = 8): Promise<Book[]> => {
-  return queryBooks({
-    isNew: true,
-    order: { column: 'publish_date', ascending: false },
-    limit,
-  })
+  try {
+    return await queryBooks({ isNew: true, order: { column: 'publish_date', ascending: false }, limit })
+  } catch (err) {
+    console.warn('No se pudieron cargar novedades:', err)
+    return []
+  }
 })
 
 export const getRelatedBooks = cache(
@@ -195,7 +231,6 @@ export const getRelatedBooks = cache(
     return queryBooks({
       categoryId,
       excludeBookId: bookId,
-      recommended: true,
       order: { column: 'rating', ascending: false },
       limit,
     })
@@ -206,43 +241,28 @@ export const searchBooks = cache(async (rawQuery: string, limit = 24): Promise<B
   const term = rawQuery.trim()
   if (!term) return []
 
-  const supabase = createDataClient()
   const pattern = `%${term}%`
 
-  const [authorMatch, tagMatch] = await Promise.all([
-    supabase.from('authors').select('id').ilike('name', pattern).limit(50),
-    supabase.from('book_tags').select('book_id').ilike('tag', pattern).limit(100),
-  ])
+  const authorRows = await db.select().from(authorsTable).where(ilike(authorsTable.name, pattern)).limit(50)
+  const tagRows = await db.select().from(bookTags).where(ilike(bookTags.tag, pattern)).limit(100)
 
-  if (authorMatch.error) throw authorMatch.error
-  if (tagMatch.error) throw tagMatch.error
-
-  const authorIds = (authorMatch.data ?? []).map((row) => row.id)
-  const tagBookIds = (tagMatch.data ?? []).map((row) => row.book_id)
-
-  const orParts = [
-    `title.ilike.${pattern.replaceAll(' ', '%')}`,
-    `isbn.ilike.${pattern}`,
-    `publisher.ilike.${pattern}`,
+  const conditions = [
+    ilike(booksTable.title, `%${term.replaceAll(' ', '%')}%`),
+    ilike(booksTable.isbn, pattern),
+    ilike(booksTable.publisher, pattern),
   ]
-  if (authorIds.length > 0) {
-    orParts.push(`author_id.in.(${authorIds.join(',')})`)
-  }
-  if (tagBookIds.length > 0) {
-    orParts.push(`id.in.(${tagBookIds.join(',')})`)
-  }
+  if (authorRows.length > 0) conditions.push(inArray(booksTable.authorId, authorRows.map((r) => r.id)))
+  if (tagRows.length > 0) conditions.push(inArray(booksTable.id, tagRows.map((r) => r.bookId)))
 
-  const { data, error } = await supabase
-    .from('books')
-    .select('*, author:author_id(id, name, slug, bio, photo_url), category:category_id(id, name, slug, description, icon)')
-    .or(orParts.join(','))
-    .order('rating', { ascending: false })
+  const rows = await db
+    .select()
+    .from(booksTable)
+    .where(or(...conditions))
+    .orderBy(desc(booksTable.rating))
     .limit(limit)
 
-  if (error) throw error
-  if (!data || data.length === 0) return []
-
-  return hydrateBooks(data as unknown as BookRow[])
+  const hydrated = await hydrateBooks2(rows)
+  return hydrated.map(toBook)
 })
 
 const COLLECTIONS: Record<string, { title: string; description: string }> = {
@@ -264,23 +284,11 @@ export async function getCatalogBySlug(slug: string): Promise<{
   description: string
   books: Book[]
 } | null> {
-  const supabase = createDataClient()
-
-  const { data: category, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle()
-
-  if (error) throw error
+  const category = await db.query.categories.findFirst({ where: eq(categoriesTable.slug, slug) })
 
   if (category) {
     const books = await queryBooks({ categorySlug: slug, order: { column: 'title' } })
-    return {
-      title: category.name,
-      description: category.description ?? '',
-      books,
-    }
+    return { title: category.name, description: category.description ?? '', books }
   }
 
   const collection = COLLECTIONS[slug]
@@ -290,7 +298,7 @@ export async function getCatalogBySlug(slug: string): Promise<{
     bestsellers: { isBestseller: true, order: { column: 'rating', ascending: false } },
     novedades: { isNew: true, order: { column: 'publish_date', ascending: false } },
     ofertas: { hasDiscount: true, order: { column: 'discount_percentage', ascending: false } },
-    recomendados: { recommended: true, order: { column: 'rating', ascending: false } },
+    recomendados: { order: { column: 'rating', ascending: false } },
     otono: { isNew: true, order: { column: 'publish_date', ascending: false } },
     'voces-contemporaneas': { order: { column: 'rating', ascending: false } },
     revistas: { tag: 'revista', order: { column: 'title' } },
@@ -302,32 +310,39 @@ export async function getCatalogBySlug(slug: string): Promise<{
 }
 
 export async function getBookParams(): Promise<{ categoria: string; slug: string }[]> {
-  const supabase = createDataClient()
+  try {
+    const bookRows = await db.select().from(booksTable)
+    const categoryRows = await db.select().from(categoriesTable)
+    const categoryMap = new Map(categoryRows.map((c) => [c.id, c]))
 
-  const { data, error } = await supabase
-    .from('books')
-    .select('slug, category:category_id(slug)')
-
-  if (error) throw error
-
-  return (data ?? [])
-    .map((row) => {
-      const category = row.category as { slug: string } | { slug: string }[] | null | undefined
-      const categoria = Array.isArray(category) ? category[0]?.slug : category?.slug
-      return { categoria: categoria ?? '', slug: row.slug }
-    })
-    .filter((params) => params.categoria.length > 0)
+    return bookRows
+      .map((row) => ({ categoria: categoryMap.get(row.categoryId)?.slug ?? '', slug: row.slug }))
+      .filter((params) => params.categoria.length > 0)
+  } catch (err) {
+    // Sin DB en el build (Docker) se generan rutas dinámicas en vez de fallar.
+    console.warn('No se pudieron generar parámetros de libros:', err)
+    return []
+  }
 }
 
 export async function getCatalogSlugs(): Promise<string[]> {
-  const supabase = createDataClient()
+  try {
+    const rows = await db.select().from(categoriesTable)
+    return [...rows.map((row) => row.slug), ...Object.keys(COLLECTIONS)]
+  } catch (err) {
+    console.warn('No se pudieron generar slugs de catálogo:', err)
+    return []
+  }
+}
 
-  const { data, error } = await supabase.from('categories').select('slug')
-
-  if (error) throw error
-
-  return [
-    ...(data ?? []).map((row) => row.slug),
-    ...Object.keys(COLLECTIONS),
-  ]
+export async function hydrateBooks(rows: BookRow[]): Promise<Book[]> {
+  const ids = rows.map((row) => row.id)
+  const [formatRows, imageRows, tagRows] = await Promise.all([
+    db.select().from(bookFormats).where(inArray(bookFormats.bookId, ids)),
+    db.select().from(bookImages).where(inArray(bookImages.bookId, ids)).orderBy(asc(bookImages.position)),
+    db.select().from(bookTags).where(inArray(bookTags.bookId, ids)),
+  ])
+  return rows.map((row) =>
+    mapBook(row, formatRows as unknown as FormatRow[], imageRows as unknown as ImageRow[], tagRows as unknown as TagRow[])
+  )
 }

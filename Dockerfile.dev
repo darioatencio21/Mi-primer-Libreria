@@ -1,0 +1,20 @@
+# ============================================================
+#  TU LIBROS YA — Dockerfile de DESARROLLO (hot-reload)
+#  Ideal para trabajar igual en cualquier máquina con Docker.
+#  En runtime se monta el código como volumen (bind mount), por
+#  eso la copia acá es solo para que existan las dependencias.
+# ============================================================
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copiamos primero solo package.json para cachear la instalación.
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Copiamos el resto (los volúmenes lo sobreescriben en runtime con hot-reload).
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
