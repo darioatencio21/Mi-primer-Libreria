@@ -72,12 +72,12 @@ export function MegaMenu() {
                 <h3 className="text-sm font-semibold text-text-primary mb-[var(--space-3)]">
                   {column.title}
                 </h3>
-                <ul className="flex flex-col gap-[var(--space-2)]">
+                <ul className="flex flex-col gap-[var(--space-1)]">
                   {column.items.map((item) => (
                     <li key={item}>
                       <Link
                         href={`/libros/${item.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="text-sm text-text-secondary hover:text-brand-primary transition-colors duration-[var(--duration-micro)]"
+                        className="flex items-center min-h-[44px] px-[var(--space-3)] rounded-[var(--radius-sm)] text-sm text-text-secondary hover:text-brand-primary hover:bg-bg-muted transition-colors duration-[var(--duration-micro)]"
                         role="menuitem"
                       >
                         {item}

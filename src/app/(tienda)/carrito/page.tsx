@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, Tag } from 'lucide-react'
 import { useCart, selectItemCount, selectTotals } from '@/lib/store'
 import { CartItem } from '@/components/cart/CartItem'
+import { FreeShippingProgress } from '@/components/cart/FreeShippingProgress'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { TrustBadges } from '@/components/ui/TrustBadges'
 import { formatArs } from '@/lib/format'
 
 export default function CarritoPage() {
@@ -57,15 +59,20 @@ export default function CarritoPage() {
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[var(--space-10)] items-start">
-          <div className="divide-y divide-border-subtle">
-            {items.map((item) => (
-              <CartItem
-                key={`${item.book.id}-${item.format}`}
-                item={item}
-                onUpdateQuantity={updateQuantity}
-                onRemove={removeItem}
-              />
-            ))}
+          <div>
+            <div className="mb-[var(--space-6)]">
+              <FreeShippingProgress subtotal={subtotal} />
+            </div>
+            <div className="divide-y divide-border-subtle">
+              {items.map((item) => (
+                <CartItem
+                  key={`${item.book.id}-${item.format}`}
+                  item={item}
+                  onUpdateQuantity={updateQuantity}
+                  onRemove={removeItem}
+                />
+              ))}
+            </div>
           </div>
 
           <aside className="bg-bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-[var(--space-6)] sticky top-[calc(var(--height-header)+var(--space-4))]">
@@ -151,6 +158,10 @@ export default function CarritoPage() {
             >
               Seguir comprando
             </Link>
+
+            <div className="mt-[var(--space-6)] pt-[var(--space-6)] border-t border-border-subtle">
+              <TrustBadges />
+            </div>
           </aside>
         </div>
       )}

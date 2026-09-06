@@ -12,15 +12,15 @@ export function PageHeader({
   action?: { href: string; label: string }
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl font-display font-medium text-slate-900">{title}</h1>
-        {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
+    <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="text-xl font-display font-medium text-slate-900 sm:text-2xl">{title}</h1>
+        {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
       </div>
       {action && (
         <Link
           href={action.href}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+          className="inline-flex w-full items-center justify-center gap-2 h-10 px-4 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           {action.label}
@@ -42,13 +42,17 @@ export function StatCard({
   hint?: string
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-start justify-between">
-      <div>
+    <div className="flex items-start justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+      <div className="min-w-0">
         <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-1 text-2xl font-display font-medium text-slate-900">{value}</p>
+        <p className="mt-1 text-xl font-display font-medium text-slate-900 sm:text-2xl">{value}</p>
         {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       </div>
-      {icon && <div className="text-orange-500">{icon}</div>}
+      {icon && (
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-orange-50 text-orange-600">
+          {icon}
+        </div>
+      )}
     </div>
   )
 }
@@ -77,7 +81,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
       {children}
     </div>
   )

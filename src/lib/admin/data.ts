@@ -10,8 +10,16 @@ import {
   categories as categoriesTable,
   orderItems,
   orders,
+  reviews as reviewsTable,
+  settings as settingsTable,
   users as usersTable,
 } from '@/lib/db/schema'
+import {
+  CHECKOUT_SETTINGS_KEY,
+  DEFAULT_CHECKOUT_CONFIG,
+  normalizeCheckoutConfig,
+  type CheckoutConfig,
+} from '@/lib/checkout-config'
 import type { BookFormat } from '@/lib/types'
 
 /**
@@ -290,6 +298,62 @@ export async function getCategoriasConConteo(): Promise<AdminCategoria[]> {
     sort_order: 0,
     bookCount: row.bookCount,
   }))
+}
+
+export interface AdminReseña {
+  id: string
+  book: string | null
+  bookTitle: string
+  userName: string
+  rating: number
+  title: string
+  content: string
+  helpfulCount: number
+  created_at: string
+}
+
+export async function getCheckoutConfig(): Promise<CheckoutConfig> {
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.key, CHECKOUT_SETTINGS_KEY)).limit(1)
+  if (!row) return DEFAULT_CHECKOUT_CONFIG
+  return normalizeCheckoutConfig(row.value)
+}
+
+export async function getReseñasConLibro(): Promise<AdminReseña[]> {
+  const rows = await db
+    .select({
+      id: reviewsTable.id,
+      bookId: reviewsTable.bookId,
+      bookTitle: booksTable.title,
+      userName: reviewsTable.userName,
+      rating: reviewsTable.rating,
+      title: reviewsTable.title,
+      content: reviewsTable.content,
+      helpfulCount: reviewsTable.helpfulCount,
+      createdAt: reviewsTable.createdAt,
+    })
+    .from(reviewsTable)
+    .leftJoin(booksTable, eq(booksTable.id, reviewsTable.bookId))
+    .orderBy(desc(reviewsTable.createdAt))
+
+  return rows.map((row) => ({
+    id: row.id,
+    book: row.bookId ?? '',
+    bookTitle: row.bookTitle ?? '(Testimonio general)',
+    userName: row.userName,
+    rating: row.rating,
+    title: row.title ?? '',
+    content: row.content,
+    helpfulCount: row.helpfulCount,
+    created_at: row.createdAt,
+  }))
+}
+
+export async function listLibrosParaSeleccionar(): Promise<{ id: string; title: string }[]> {
+  const rows = await db
+    .select({ id: booksTable.id, title: booksTable.title })
+    .from(booksTable)
+    .orderBy(asc(booksTable.title))
+  return rows
 }
 
 export async function listPedidos(): Promise<AdminPedido[]> {

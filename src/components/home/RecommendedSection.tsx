@@ -1,9 +1,15 @@
 import Link from 'next/link'
-import { BookCard } from '@/components/product/BookCard'
-import { getNewReleases } from '@/lib/data'
+import { FormatFilterShelf } from '@/components/home/FormatFilterShelf'
+import { RotatingOpinions } from '@/components/home/RotatingOpinions'
+import { getNewReleases, getReviewPreviewsByBooks } from '@/lib/data'
 
 export async function RecommendedSection() {
   const libros = await getNewReleases(8)
+  const reviewPreviews = await getReviewPreviewsByBooks(libros)
+
+  const opinions = Object.values(reviewPreviews).filter(
+    (preview): preview is NonNullable<typeof preview> => preview !== null
+  )
 
   return (
     <section className="py-[var(--space-24)] bg-bg-muted">
@@ -14,17 +20,17 @@ export async function RecommendedSection() {
           </h2>
           <Link
             href="/libros/recomendados"
-            className="hidden sm:inline-flex text-sm font-semibold text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px]"
+            className="hidden sm:inline-flex items-center gap-[var(--space-1)] text-sm font-semibold text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px] transition-transform duration-[var(--duration-micro)] hover:translate-x-0.5"
           >
             Ver más →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[var(--space-6)]">
-          {libros.map((book) => (
-            <BookCard key={book.id} book={book} />
-          ))}
-        </div>
+        {opinions.length > 0 && <RotatingOpinions items={opinions} />}
+
+        {libros.length > 0 && (
+          <FormatFilterShelf books={libros} variant="grid" reviewPreviews={reviewPreviews} />
+        )}
       </div>
     </section>
   )

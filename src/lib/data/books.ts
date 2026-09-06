@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { and, asc, desc, eq, ilike, inArray, isNotNull, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNotNull, ne, or, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import {
   authors as authorsTable,
@@ -242,14 +242,23 @@ export const searchBooks = cache(async (rawQuery: string, limit = 24): Promise<B
   if (!term) return []
 
   const pattern = `%${term}%`
+  const titlePattern = `%${term.replaceAll(' ', ' %')}%`
 
-  const authorRows = await db.select().from(authorsTable).where(ilike(authorsTable.name, pattern)).limit(50)
-  const tagRows = await db.select().from(bookTags).where(ilike(bookTags.tag, pattern)).limit(100)
+  const authorRows = await db
+    .select()
+    .from(authorsTable)
+    .where(sql`unaccent(${authorsTable.name}) ilike unaccent(${pattern})`)
+    .limit(50)
+  const tagRows = await db
+    .select()
+    .from(bookTags)
+    .where(sql`unaccent(${bookTags.tag}) ilike unaccent(${pattern})`)
+    .limit(100)
 
   const conditions = [
-    ilike(booksTable.title, `%${term.replaceAll(' ', '%')}%`),
+    sql`unaccent(${booksTable.title}) ilike unaccent(${titlePattern})`,
     ilike(booksTable.isbn, pattern),
-    ilike(booksTable.publisher, pattern),
+    sql`unaccent(${booksTable.publisher}) ilike unaccent(${pattern})`,
   ]
   if (authorRows.length > 0) conditions.push(inArray(booksTable.authorId, authorRows.map((r) => r.id)))
   if (tagRows.length > 0) conditions.push(inArray(booksTable.id, tagRows.map((r) => r.bookId)))

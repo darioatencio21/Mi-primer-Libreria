@@ -5,7 +5,7 @@ import { AdminLoginForm } from './AdminLoginForm'
 export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#f6f5f2] flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
         <div className="mb-6 text-center">
           <p className="text-xs uppercase tracking-widest text-orange-600 font-semibold mb-1">
             Tus Libros Ya

@@ -6,9 +6,11 @@ import { Pencil, Plus, X, Save, Trash2 } from 'lucide-react'
 export interface CrudField {
   name: string
   label: string
-  type?: 'text' | 'textarea' | 'number'
+  type?: 'text' | 'textarea' | 'number' | 'select'
   required?: boolean
   help?: string
+  options?: { value: string; label: string }[]
+  display?: string
 }
 
 export type CrudValue = Record<string, string>
@@ -41,7 +43,8 @@ export function CrudManager({
     const rec = r as Record<string, unknown>
     return {
       id: String(rec[idKey]),
-      cells: fields.map((f) => String(rec[f.name] ?? '')),
+      cells: fields.map((f) => String(rec[f.display ?? f.name] ?? '')),
+      rawCells: fields.map((f) => String(rec[f.name] ?? '')),
     }
   })
 
@@ -58,10 +61,66 @@ export function CrudManager({
     })
   }
 
+  function handleDelete(id: string) {
+    if (!window.confirm('¿Seguro que deseas eliminar este registro?')) return
+    startTransition(async () => {
+      const result = await deleteAction(id)
+      if (result && !result.ok) setError(result.message ?? 'Error')
+    })
+  }
+
+  const renderEditForm = (row: { id: string; rawCells: string[] }) => (
+    <form action={async (fd) => handleRowAction(row.id, fd, 'update')} className="flex flex-col gap-3">
+      <FieldInputs fields={fields} values={row.rawCells} />
+      <div className="flex items-center gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setEditingId(null)}
+          className="h-9 px-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-orange-600 text-white text-sm font-semibold hover:bg-orange-500 transition-colors disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          Guardar
+        </button>
+      </div>
+    </form>
+  )
+
+  const ActionButtons = ({ id }: { id: string }) => (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => {
+          setEditingId(id)
+          setCreating(false)
+        }}
+        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-2 py-1.5 rounded-md transition-colors"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+        Editar
+      </button>
+      <button
+        type="button"
+        onClick={() => handleDelete(id)}
+        disabled={pending}
+        className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded-md transition-colors disabled:opacity-50"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        Eliminar
+      </button>
+    </div>
+  )
+
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+    <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           {description && <p className="text-sm text-slate-500">{description}</p>}
         </div>
@@ -71,7 +130,7 @@ export function CrudManager({
             setCreating(!creating)
             setEditingId(null)
           }}
-          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+          className="inline-flex shrink-0 items-center gap-2 h-9 px-3 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
         >
           {creating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {creating ? 'Cancelar' : 'Nuevo'}
@@ -102,89 +161,76 @@ export function CrudManager({
         </form>
       )}
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-400">
-            {fields.map((f) => (
-              <th key={f.name} className="px-3 py-2">{f.label}</th>
-            ))}
-            <th className="px-3 py-2 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayRows.length === 0 && (
-            <tr>
-              <td colSpan={fields.length + 1} className="px-3 py-8 text-center text-slate-500">
-                No hay registros todavía.
-              </td>
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-400">
+              {fields.map((f) => (
+                <th key={f.name} className="px-3 py-2">{f.label}</th>
+              ))}
+              <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
-          )}
-          {displayRows.map((row) => (
-            <tr key={row.id} className="border-b border-slate-100 last:border-0">
-              {editingId === row.id ? (
-                <td colSpan={fields.length + 1} className="px-3 py-3">
-                  <form action={async (fd) => handleRowAction(row.id, fd, 'update')} className="flex flex-col gap-3">
-                    <FieldInputs fields={fields} values={row.cells} />
-                    <div className="flex items-center gap-2 self-end">
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                        className="h-9 px-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={pending}
-                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-orange-600 text-white text-sm font-semibold hover:bg-orange-500 transition-colors disabled:opacity-50"
-                      >
-                        <Save className="w-4 h-4" />
-                        Guardar
-                      </button>
-                    </div>
-                  </form>
+          </thead>
+          <tbody>
+            {displayRows.length === 0 && (
+              <tr>
+                <td colSpan={fields.length + 1} className="px-3 py-8 text-center text-slate-500">
+                  No hay registros todavía.
                 </td>
-              ) : (
-                <>
-                  {row.cells.map((cell, i) => (
-                    <td key={i} className="px-3 py-3 text-slate-700">{cell}</td>
-                  ))}
-                  <td className="px-3 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingId(row.id)
-                          setCreating(false)
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-2 py-1.5 rounded-md transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!window.confirm('¿Seguro que deseas eliminar este registro?')) return
-                          startTransition(async () => {
-                            const result = await deleteAction(row.id)
-                            if (result && !result.ok) setError(result.message ?? 'Error')
-                          })
-                        }}
-                        disabled={pending}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded-md transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Eliminar
-                      </button>
-                    </div>
+              </tr>
+            )}
+            {displayRows.map((row) => (
+              <tr key={row.id} className="border-b border-slate-100 last:border-0">
+                {editingId === row.id ? (
+                  <td colSpan={fields.length + 1} className="px-3 py-3">
+                    {renderEditForm(row)}
                   </td>
-                </>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                ) : (
+                  <>
+                    {row.cells.map((cell, i) => (
+                      <td key={i} className="px-3 py-3 text-slate-700">{cell}</td>
+                    ))}
+                    <td className="px-3 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <ActionButtons id={row.id} />
+                      </div>
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:hidden">
+        {displayRows.length === 0 && (
+          <p className="px-3 py-8 text-center text-sm text-slate-500">No hay registros todavía.</p>
+        )}
+        {displayRows.map((row) => (
+          <div key={row.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            {editingId === row.id ? (
+              renderEditForm(row)
+            ) : (
+              <>
+                <dl className="flex flex-col gap-2">
+                  {row.cells.map((cell, i) => (
+                    <div key={i} className="min-w-0">
+                      <dt className="text-xs font-medium text-slate-400">{fields[i].label}</dt>
+                      <dd className="text-sm text-slate-800 break-words line-clamp-2">
+                        {cell || '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3">
+                  <ActionButtons id={row.id} />
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -211,6 +257,19 @@ function FieldInputs({
                 rows={3}
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
               />
+            ) : f.type === 'select' && f.options ? (
+              <select
+                name={f.name}
+                defaultValue={val}
+                className="h-11 rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
+              >
+                <option value="">Seleccionar...</option>
+                {f.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             ) : (
               <input
                 name={f.name}
@@ -220,6 +279,7 @@ function FieldInputs({
                 className="h-11 rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
               />
             )}
+            {f.help && <span className="text-xs text-slate-400">{f.help}</span>}
           </label>
         )
       })}

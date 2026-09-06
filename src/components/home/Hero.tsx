@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Leaf, Sparkles } from 'lucide-react'
+import { ArrowRight, Leaf, Sparkles, Tag } from 'lucide-react'
 
 const BADGES = [
   { label: 'Bestseller', className: 'top-[12%] left-[4%]' },
@@ -33,9 +33,9 @@ export function Hero() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] min-h-[520px] md:min-h-[560px] lg:min-h-[640px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] min-h-[440px] md:min-h-[540px] lg:min-h-[640px]">
         {/* Columna izquierda: contenido */}
-        <div className="flex flex-col justify-center p-[var(--space-8)] md:p-[var(--space-12)] lg:p-[var(--space-16)]">
+        <div className="flex flex-col justify-center p-[var(--space-6)] md:p-[var(--space-12)] lg:p-[var(--space-16)]">
           <div className="flex items-center gap-[var(--space-3)] mb-[var(--space-4)] animate-[fadeInUp_500ms_ease-out]">
             <span className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-accent-forest text-accent-forest-light text-xs font-semibold tracking-wider uppercase">
               <Leaf className="w-3.5 h-3.5" aria-hidden="true" />
@@ -51,10 +51,10 @@ export function Hero() {
           <p className="text-lg text-text-secondary max-w-[480px] mb-[var(--space-8)] animate-[fadeInUp_500ms_ease-out_160ms]">
             Descubre una selección curada de libros que transformarán tu perspectiva, alimentarán tu curiosidad y te acompañarán mucho después de la última página.
           </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-[var(--space-4)] animate-[fadeInUp_500ms_ease-out_240ms]">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-[var(--space-3)] w-full sm:w-auto animate-[fadeInUp_500ms_ease-out_240ms]">
             <Link
               href="/libros/otono"
-              className="group inline-flex items-center justify-center font-semibold tracking-[0.01em] rounded-[var(--radius-md)] h-[var(--height-btn-lg)] px-[var(--space-6)] text-sm gap-[var(--space-2)] bg-brand-primary text-text-on-brand shadow-[var(--shadow-sm)] transition-all duration-[var(--duration-card)] ease-out hover:-translate-y-[2px] hover:bg-brand-primary-hover hover:shadow-[var(--shadow-md)] active:translate-y-0 active:scale-[0.98]"
+              className="group inline-flex items-center justify-center font-semibold tracking-[0.01em] rounded-[var(--radius-md)] h-[var(--height-btn-lg)] px-[var(--space-6)] text-sm gap-[var(--space-2)] bg-brand-primary text-text-on-brand shadow-[var(--shadow-sm)] transition-all duration-[var(--duration-card)] ease-out hover:-translate-y-[2px] hover:bg-brand-primary-hover hover:shadow-[var(--shadow-md)] active:translate-y-0 active:scale-[0.98] w-full sm:w-auto"
             >
               Explorar colección
               <ArrowRight
@@ -64,10 +64,25 @@ export function Hero() {
             </Link>
             <Link
               href="/libros/ofertas"
-              className="text-sm font-medium text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px] transition-colors duration-[var(--duration-card)]"
+              className="group inline-flex items-center justify-center gap-[var(--space-2)] rounded-[var(--radius-md)] h-[var(--height-btn-lg)] px-[var(--space-6)] text-sm font-semibold tracking-[0.01em] border-[1.5px] border-brand-primary bg-bg-surface/70 text-brand-primary shadow-[var(--shadow-xs)] backdrop-blur-[2px] transition-all duration-[var(--duration-card)] ease-out hover:-translate-y-[2px] hover:bg-brand-primary-light hover:shadow-[var(--shadow-sm)] active:translate-y-0 active:scale-[0.98] w-full sm:w-auto"
             >
+              <Tag className="w-4 h-4" aria-hidden="true" />
               Ver ofertas
             </Link>
+          </div>
+
+          {/* Pila de libros: solo móvil/tablet */}
+          <div className="mt-[var(--space-8)] lg:hidden">
+            <div className="relative aspect-[1046/1040] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-lg)]">
+              <Image
+                src="/foto-libros-chatgpt.webp"
+                alt="Pila de libros de la colección"
+                fill
+                sizes="(max-width: 767px) calc(100vw - 6rem), (max-width: 1023px) calc(100vw - 11rem), 560px"
+                priority
+                className="object-cover"
+              />
+            </div>
           </div>
         </div>
 
@@ -95,7 +110,7 @@ export function Hero() {
                 <div className="absolute inset-x-0 -bottom-2 h-[14px] bg-[#241E18]/[0.12] blur-xl rounded-[50%]" />
               </div>
 
-              <div className="relative aspect-[1490/1056] transition-transform duration-[var(--duration-layout)] ease-out group-hover:scale-[1.03] group-hover:-rotate-1 will-change-transform">
+              <div className="relative aspect-[1046/1040] transition-transform duration-[var(--duration-layout)] ease-out group-hover:scale-[1.03] group-hover:-rotate-1 will-change-transform">
                 <Image
                   src="/foto-libros-chatgpt.webp"
                   alt="Pila de libros de la colección"

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 
   return {
     title: author.name,
-    description: author.bio ? author.bio.slice(0, 155) : `Libros de ${author.name} en Nova Books.`,
+    description: author.bio ? author.bio.slice(0, 155) : `Libros de ${author.name} en Tus Libros Ya.`,
   }
 }
 

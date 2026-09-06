@@ -1,4 +1,5 @@
 import { Fraunces, Inter } from "next/font/google"
+import type { Viewport } from "next"
 import "./globals.css"
 
 const fraunces = Fraunces({
@@ -14,6 +15,13 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
   display: "swap",
 })
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#FBF7F1",
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

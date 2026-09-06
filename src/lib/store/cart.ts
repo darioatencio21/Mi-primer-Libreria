@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Book, BookFormat, CartItem as CartItemType } from '@/lib/types'
 import { usdToArs } from '@/lib/format'
 
-export const FREE_SHIPPING_THRESHOLD = usdToArs(50)
+export const FREE_SHIPPING_THRESHOLD = 50000
 export const SHIPPING_FEE = usdToArs(5.99)
 export const COUPON_DISCOUNT = 0.1
 const VALID_COUPONS = ['NOVA10'] as const
@@ -85,7 +85,7 @@ export function selectSubtotal(items: CartItemType[]): number {
 export function selectTotals(items: CartItemType[], coupon: string | null) {
   const subtotal = selectSubtotal(items)
   const discount = coupon ? subtotal * COUPON_DISCOUNT : 0
-  const shipping = subtotal - discount > FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
+  const shipping = subtotal - discount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
   const total = subtotal - discount + shipping
   return { subtotal, discount, shipping, total }
 }

@@ -5,7 +5,7 @@ import { AuthorAvatar } from '@/components/ui/AuthorAvatar'
 
 export const metadata: Metadata = {
   title: 'Autores',
-  description: 'Conocé a los autores destacados de Nova Books.',
+  description: 'Conocé a los autores destacados de Tus Libros Ya.',
 }
 
 export const revalidate = 3600

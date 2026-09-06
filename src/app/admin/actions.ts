@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import {
   authors as authorsTable,
@@ -12,7 +12,13 @@ import {
   bookTags,
   categories as categoriesTable,
   orders,
+  reviews as reviewsTable,
+  settings as settingsTable,
 } from '@/lib/db/schema'
+import {
+  CHECKOUT_SETTINGS_KEY,
+  normalizeCheckoutConfig,
+} from '@/lib/checkout-config'
 import {
   verifyAdminPassword,
   createAdminSession,
@@ -356,6 +362,159 @@ export async function actualizarEstadoPedido(id: string, status: string): Promis
   try {
     await db.update(orders).set({ status: status as OrderStatusValue }).where(eq(orders.id, id))
     revalidatePath('/admin/pedidos')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, message: `Error: ${messageOf(err)}` }
+  }
+}
+
+// ---------- CONFIGURACIÓN DEL CHECKOUT ----------
+
+export async function guardarConfiguracionCheckout(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  await assertAdmin()
+
+  try {
+    const [row] = await db
+      .select()
+      .from(settingsTable)
+      .where(eq(settingsTable.key, CHECKOUT_SETTINGS_KEY))
+      .limit(1)
+    const current = normalizeCheckoutConfig(row?.value)
+
+    const shippingMethods = current.shippingMethods.map((m) => ({
+      ...m,
+      label: String(formData.get(`shipping_${m.id}_label`) ?? '').trim() || m.label,
+      time: String(formData.get(`shipping_${m.id}_time`) ?? '').trim() || m.time,
+      price: toNum(formData.get(`shipping_${m.id}_price`)),
+    }))
+
+    const paymentMethods = current.paymentMethods.map((m) => ({
+      ...m,
+      label: String(formData.get(`payment_${m.id}_label`) ?? '').trim() || m.label,
+      icon: String(formData.get(`payment_${m.id}_icon`) ?? '').trim() || m.icon,
+      enabled: formData.get(`payment_${m.id}_enabled`) === 'on',
+    }))
+
+    const freeShippingThreshold = toNum(formData.get('free_shipping_threshold'))
+
+    if (shippingMethods.some((m) => m.price < 0)) {
+      return { ok: false, message: 'Los precios de envío no pueden ser negativos.' }
+    }
+    if (freeShippingThreshold < 0) {
+      return { ok: false, message: 'El umbral de envío gratis no puede ser negativo.' }
+    }
+
+    const value = { shippingMethods, paymentMethods, freeShippingThreshold }
+
+    await db
+      .insert(settingsTable)
+      .values({ key: CHECKOUT_SETTINGS_KEY, value, updatedAt: new Date().toISOString() })
+      .onConflictDoUpdate({
+        target: settingsTable.key,
+        set: { value, updatedAt: new Date().toISOString() },
+      })
+
+    revalidatePath('/admin/configuracion')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, message: `Error al guardar: ${messageOf(err)}` }
+  }
+}
+
+// ---------- RESEÑAS ----------
+
+async function refreshBookRating(bookId: string | null): Promise<void> {
+  if (!bookId) return
+  const [agg] = await db
+    .select({
+      avg: sql<string>`round(coalesce(avg(${reviewsTable.rating}), 0)::numeric, 2)`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(reviewsTable)
+    .where(eq(reviewsTable.bookId, bookId))
+
+  await db
+    .update(booksTable)
+    .set({
+      rating: Number(agg?.avg ?? 0),
+      reviewCount: agg?.count ?? 0,
+    })
+    .where(eq(booksTable.id, bookId))
+}
+
+export async function crearReseña(formData: FormData): Promise<ActionResult> {
+  await assertAdmin()
+  try {
+    const bookId = String(formData.get('book') ?? '').trim() || null
+    const userName = String(formData.get('userName') ?? '').trim()
+    const rating = toInt(formData.get('rating'))
+    const title = String(formData.get('title') ?? '').trim().slice(0, 120)
+    const content = String(formData.get('content') ?? '').trim().slice(0, 2000)
+
+    if (!userName) return { ok: false, message: 'El nombre del cliente es obligatorio.' }
+    if (rating < 1 || rating > 5) {
+      return { ok: false, message: 'La calificación debe ser entre 1 y 5.' }
+    }
+    if (!content) return { ok: false, message: 'El comentario es obligatorio.' }
+
+    await db.insert(reviewsTable).values({ bookId, userName, rating, title: title || null, content })
+
+    if (bookId) await refreshBookRating(bookId)
+    revalidatePath('/admin/resenas')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, message: `Error: ${messageOf(err)}` }
+  }
+}
+
+export async function actualizarReseña(id: string, formData: FormData): Promise<ActionResult> {
+  await assertAdmin()
+  try {
+    const [existing] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id)).limit(1)
+    if (!existing) return { ok: false, message: 'Reseña no encontrada.' }
+
+    const bookId =
+      String(formData.get('book') ?? '').trim() || null
+    const userName = String(formData.get('userName') ?? '').trim()
+    const rating = toInt(formData.get('rating'))
+    const title = String(formData.get('title') ?? '').trim().slice(0, 120)
+    const content = String(formData.get('content') ?? '').trim().slice(0, 2000)
+
+    if (!userName) return { ok: false, message: 'El nombre del cliente es obligatorio.' }
+    if (rating < 1 || rating > 5) {
+      return { ok: false, message: 'La calificación debe ser entre 1 y 5.' }
+    }
+
+    await db
+      .update(reviewsTable)
+      .set({ bookId, userName, rating, title: title || null, content })
+      .where(eq(reviewsTable.id, id))
+
+    if (existing.bookId !== bookId && existing.bookId) await refreshBookRating(existing.bookId)
+    if (bookId) await refreshBookRating(bookId)
+    revalidatePath('/admin/resenas')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, message: `Error: ${messageOf(err)}` }
+  }
+}
+
+export async function eliminarReseña(id: string): Promise<ActionResult> {
+  await assertAdmin()
+  try {
+    const [existing] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id)).limit(1)
+    if (!existing) return { ok: false, message: 'Reseña no encontrada.' }
+
+    await db.delete(reviewsTable).where(eq(reviewsTable.id, id))
+    if (existing.bookId) await refreshBookRating(existing.bookId)
+    revalidatePath('/admin/resenas')
+    revalidatePath('/')
     return { ok: true }
   } catch (err) {
     return { ok: false, message: `Error: ${messageOf(err)}` }

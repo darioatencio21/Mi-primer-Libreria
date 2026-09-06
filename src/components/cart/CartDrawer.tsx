@@ -1,75 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import Link from 'next/link'
 import { X, Tag } from 'lucide-react'
 import { CartItem } from './CartItem'
+import { FreeShippingProgress } from './FreeShippingProgress'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { TrustBadges } from '@/components/ui/TrustBadges'
+import { useCart, selectItemCount, selectTotals } from '@/lib/store'
 import { formatArs } from '@/lib/format'
-import type { CartItem as CartItemType } from '@/lib/types'
-
-const MOCK_CART_ITEMS: CartItemType[] = [
-  {
-    book: {
-      id: '1',
-      title: 'Cien años de soledad',
-      slug: 'cien-anos-de-soledad',
-      author: { id: 'a1', name: 'Gabriel García Márquez', slug: 'garcia-marquez', bio: '', bookCount: 12 },
-      category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-      description: 'La obra maestra del realismo mágico.',
-      price: 24.99,
-      discountPrice: 19.99,
-      discountPercentage: 20,
-      formats: [
-        { type: 'paperback', price: 19.99, stock: 15 },
-        { type: 'hardcover', price: 34.99, stock: 8 },
-      ],
-      coverImage: '/placeholder-book.svg',
-      images: [],
-      isbn: '978-0-00-000000-0',
-      publisher: 'Editorial Sudamericana',
-      pages: 471,
-      language: 'Español',
-      publishDate: '1967-05-30',
-      rating: 4.8,
-      reviewCount: 2847,
-      stock: 15,
-      isBestseller: true,
-      isNew: false,
-      tags: ['realismo mágico', 'clásico'],
-    },
-    format: 'paperback',
-    quantity: 1,
-  },
-  {
-    book: {
-      id: '3',
-      title: 'Kafka en la orilla',
-      slug: 'kafka-en-la-orilla',
-      author: { id: 'a2', name: 'Haruki Murakami', slug: 'haruki-murakami', bio: '', bookCount: 15 },
-      category: { id: 'c1', name: 'Ficción', slug: 'ficcion', description: '', icon: '', bookCount: 0 },
-      description: 'Un viaje surrealista entre dos mundos.',
-      price: 26.99,
-      formats: [{ type: 'hardcover', price: 26.99, stock: 12 }],
-      coverImage: '/placeholder-book.svg',
-      images: [],
-      isbn: '978-0-00-000000-2',
-      publisher: 'Tusquets Editores',
-      pages: 505,
-      language: 'Español',
-      publishDate: '2002-09-12',
-      rating: 4.6,
-      reviewCount: 1456,
-      stock: 12,
-      isBestseller: true,
-      isNew: false,
-      tags: ['surrealismo', 'contemporáneo'],
-    },
-    format: 'hardcover',
-    quantity: 2,
-  },
-]
 
 interface CartDrawerProps {
   isOpen: boolean
@@ -77,10 +17,15 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const [items, setItems] = useState<CartItemType[]>(MOCK_CART_ITEMS)
+  const items = useCart((state) => state.items)
+  const coupon = useCart((state) => state.coupon)
+  const updateQuantity = useCart((state) => state.updateQuantity)
+  const removeItem = useCart((state) => state.removeItem)
+  const setCoupon = useCart((state) => state.setCoupon)
+  const removeCoupon = useCart((state) => state.removeCoupon)
+
   const [couponOpen, setCouponOpen] = useState(false)
   const [couponCode, setCouponCode] = useState('')
-  const [couponApplied, setCouponApplied] = useState(false)
   const [couponError, setCouponError] = useState('')
 
   useEffect(() => {
@@ -102,36 +47,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  const updateQuantity = useCallback((bookId: string, quantity: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.book.id === bookId ? { ...item, quantity } : item
-      )
-    )
-  }, [])
-
-  const removeItem = useCallback((bookId: string) => {
-    setItems((prev) => prev.filter((item) => item.book.id !== bookId))
-  }, [])
-
-  const applyCoupon = () => {
-    if (couponCode.toUpperCase() === 'TUYA10') {
-      setCouponApplied(true)
+  const applyCoupon = useCallback(() => {
+    if (setCoupon(couponCode)) {
       setCouponError('')
+      setCouponCode('')
+      setCouponOpen(false)
     } else {
-      setCouponError('Ese código no es válido o ya venció.')
+      setCouponError('Ese código no es válido o ya venció. Probá con NOVA10.')
     }
-  }
+  }, [couponCode, setCoupon])
 
-  const subtotal = items.reduce((sum, item) => {
-    const price = item.book.formats.find((f) => f.type === item.format)?.price || item.book.price
-    return sum + price * item.quantity
-  }, 0)
-
-  const discount = couponApplied ? subtotal * 0.1 : 0
-  const shipping = subtotal > 50 ? 0 : 5.99
-  const total = subtotal - discount + shipping
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+  const itemCount = selectItemCount(items)
+  const { subtotal, discount, shipping, total } = selectTotals(items, coupon)
 
   if (!isOpen) return null
 
@@ -170,17 +97,36 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-[var(--space-6)]">
-              {items.map((item) => (
-                <CartItem
-                  key={item.book.id}
-                  item={item}
-                  onUpdateQuantity={updateQuantity}
-                  onRemove={removeItem}
-                />
-              ))}
+              <div className="pt-[var(--space-4)]">
+                <FreeShippingProgress subtotal={subtotal} />
+              </div>
+
+              <div className="pt-[var(--space-4)]">
+                {items.map((item) => (
+                  <CartItem
+                    key={`${item.book.id}-${item.format}`}
+                    item={item}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeItem}
+                  />
+                ))}
+              </div>
 
               <div className="py-[var(--space-4)]">
-                {!couponOpen && !couponApplied ? (
+                {coupon ? (
+                  <div className="flex items-center justify-between bg-success-bg rounded-[var(--radius-sm)] px-[var(--space-3)] py-[var(--space-2)]">
+                    <span className="flex items-center gap-[var(--space-2)] text-xs font-medium text-success">
+                      <Tag className="w-3.5 h-3.5" aria-hidden="true" />
+                      {coupon} aplicado
+                    </span>
+                    <button
+                      onClick={removeCoupon}
+                      className="text-xs text-success underline decoration-[1.5px] underline-offset-[2px]"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ) : !couponOpen ? (
                   <button
                     onClick={() => setCouponOpen(true)}
                     className="flex items-center gap-[var(--space-2)] text-sm text-brand-primary font-medium hover:underline decoration-[1.5px] underline-offset-[3px]"
@@ -195,36 +141,28 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
                       placeholder="Código de cupón"
-                      disabled={couponApplied}
-                      className="flex-1 h-[var(--height-btn-sm)] px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none disabled:bg-bg-muted disabled:text-text-tertiary"
+                      className="flex-1 h-[var(--height-btn-sm)] px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none"
                     />
-                    {!couponApplied && (
-                      <Button size="sm" variant="secondary" onClick={applyCoupon}>
-                        Aplicar
-                      </Button>
-                    )}
-                    {couponApplied && (
-                      <span className="flex items-center text-xs font-medium text-success">
-                        ✓ Aplicado
-                      </span>
-                    )}
+                    <Button size="sm" variant="secondary" onClick={applyCoupon}>
+                      Aplicar
+                    </Button>
                   </div>
                 )}
                 {couponError && (
-                  <p className="mt-[var(--space-1)] text-xs text-error" role="alert">
+                  <p className="mt-[var(--space-2)] text-xs text-error" role="alert">
                     {couponError}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="border-t border-border-subtle p-[var(--space-6)] bg-bg-surface">
+            <div className="border-t border-border-subtle p-[var(--space-6)] pb-[calc(var(--space-6)+env(safe-area-inset-bottom))] bg-bg-surface">
               <div className="flex flex-col gap-[var(--space-2)] mb-[var(--space-4)]">
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Subtotal</span>
                   <span className="text-text-primary font-medium">{formatArs(subtotal)}</span>
                 </div>
-                {couponApplied && (
+                {discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-success">Descuento (10%)</span>
                     <span className="text-success font-medium">-{formatArs(discount)}</span>
@@ -253,6 +191,10 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               >
                 Seguir comprando
               </button>
+
+              <div className="mt-[var(--space-5)] pt-[var(--space-5)] border-t border-border-subtle">
+                <TrustBadges compact />
+              </div>
             </div>
           </>
         )}
@@ -267,4 +209,3 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     </div>
   )
 }
-

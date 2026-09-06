@@ -93,7 +93,7 @@ export function FilterSidebar({
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="text-xs font-medium text-accent-terracotta hover:underline"
+            className="inline-flex items-center min-h-[44px] px-[var(--space-3)] -my-2 text-xs font-medium text-accent-terracotta hover:underline"
           >
             Limpiar todo ({activeFilterCount})
           </button>
@@ -113,7 +113,7 @@ export function FilterSidebar({
             onChange={(e) =>
               updateFilter('priceMin', e.target.value ? Number(e.target.value) : undefined)
             }
-            className="w-full h-9 px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none"
+            className="w-full h-11 px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none"
             min={0}
           />
           <span className="text-text-tertiary text-sm">—</span>
@@ -124,7 +124,7 @@ export function FilterSidebar({
             onChange={(e) =>
               updateFilter('priceMax', e.target.value ? Number(e.target.value) : undefined)
             }
-            className="w-full h-9 px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none"
+            className="w-full h-11 px-[var(--space-3)] rounded-[var(--radius-sm)] border border-border-input text-sm text-text-primary bg-bg-surface focus:border-brand-primary focus:outline-none"
             min={0}
           />
         </div>
@@ -135,11 +135,11 @@ export function FilterSidebar({
         isOpen={openSections.has('format')}
         onToggle={() => toggleSection('format')}
       >
-        <div className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex flex-col gap-[var(--space-1)]">
           {FORMATS.map((format) => (
             <label
               key={format.value}
-              className="flex items-center gap-[var(--space-2)] cursor-pointer group"
+              className="flex items-center gap-[var(--space-3)] min-h-[44px] cursor-pointer group"
             >
               <input
                 type="checkbox"
@@ -160,11 +160,11 @@ export function FilterSidebar({
         isOpen={openSections.has('language')}
         onToggle={() => toggleSection('language')}
       >
-        <div className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex flex-col gap-[var(--space-1)]">
           {LANGUAGES.map((lang) => (
             <label
               key={lang}
-              className="flex items-center gap-[var(--space-2)] cursor-pointer group"
+              className="flex items-center gap-[var(--space-3)] min-h-[44px] cursor-pointer group"
             >
               <input
                 type="checkbox"
@@ -185,7 +185,7 @@ export function FilterSidebar({
         isOpen={openSections.has('availability')}
         onToggle={() => toggleSection('availability')}
       >
-        <label className="flex items-center gap-[var(--space-3)] cursor-pointer">
+        <label className="flex items-center gap-[var(--space-3)] min-h-[44px] cursor-pointer">
           <button
             role="switch"
             aria-checked={filters.inStockOnly || false}
@@ -234,10 +234,10 @@ export function FilterSidebar({
         <p className="text-sm font-semibold text-text-primary mb-[var(--space-3)]">Popularidad</p>
         <div className="flex flex-wrap gap-[var(--space-2)]">
           {POPULARITY_CHIPS.map((chip) => (
-            <button
-              key={chip.value}
-              className="px-[var(--space-3)] py-[var(--space-2)] rounded-[var(--radius-full)] text-xs font-medium bg-bg-muted text-text-secondary hover:bg-brand-primary-light hover:text-brand-primary transition-colors duration-[var(--duration-micro)]"
-            >
+<button
+            key={chip.value}
+            className="px-[var(--space-3)] py-[var(--space-2)] min-h-[44px] rounded-[var(--radius-full)] text-xs font-medium bg-bg-muted text-text-secondary hover:bg-brand-primary-light hover:text-brand-primary transition-colors duration-[var(--duration-micro)]"
+          >
               {chip.label}
             </button>
           ))}
@@ -256,7 +256,7 @@ export function FilterSidebar({
               onClick={onClose}
               aria-hidden="true"
             />
-            <div className="absolute right-0 top-0 bottom-0 w-full max-w-[360px] bg-bg-elevated shadow-[var(--shadow-xl)] p-[var(--space-6)] overflow-y-auto animate-[fadeInUp_300ms_var(--ease-out-quint)]">
+            <div className="absolute right-0 top-0 bottom-0 w-full max-w-[360px] bg-bg-elevated shadow-[var(--shadow-xl)] p-[var(--space-6)] pb-[calc(var(--space-6)+env(safe-area-inset-bottom))] overflow-y-auto animate-[fadeInUp_300ms_var(--ease-out-quint)]">
               <div className="flex items-center justify-between mb-[var(--space-6)]">
                 <h2 className="text-lg font-semibold text-text-primary">Filtros</h2>
                 <button
@@ -297,7 +297,7 @@ function FilterSection({
     <div className="border-b border-border-subtle pb-[var(--space-4)]">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full py-[var(--space-2)] text-left group"
+        className="flex items-center justify-between w-full min-h-[44px] py-[var(--space-2)] text-left group"
         aria-expanded={isOpen}
       >
         <span className="text-sm font-semibold text-text-primary">{title}</span>

@@ -71,7 +71,7 @@ export function LibroForm({
   return (
     <form
       action={formAction}
-      className="max-w-4xl bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-5"
+      className="max-w-4xl bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-5 sm:p-6"
     >
       {state?.message && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
@@ -145,27 +145,27 @@ export function LibroForm({
 
       <div className="border-t border-slate-100 pt-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-3">Formatos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {FORMATOS.map((type) => (
-            <div key={type} className="grid grid-cols-[1fr_1fr] gap-2 items-end bg-slate-50 rounded-lg p-3 border border-slate-100">
-              <span className="col-span-2 text-sm font-medium text-slate-700">{FORMATO_LABELS[type]}</span>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-500">Precio</span>
+            <div key={type} className="grid grid-cols-1 gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <span className="mb-0.5 text-sm font-semibold text-slate-800">{FORMATO_LABELS[type]}</span>
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-xs font-medium text-slate-500">Precio</span>
                 <input
                   name={`format_${type}_price`}
                   type="number"
                   step="0.01"
                   defaultValue={f?.[`formato_${type}_price` as keyof LibroFormData] !== undefined ? String(f?.[(`formato_${type}_price`) as keyof LibroFormData]) : ''}
-                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-orange-500 focus:outline-none"
+                  className="h-9 w-32 rounded-md border border-slate-300 bg-white px-3 text-right text-sm focus:border-orange-500 focus:outline-none"
                 />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-500">Stock</span>
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-xs font-medium text-slate-500">Stock</span>
                 <input
                   name={`format_${type}_stock`}
                   type="number"
                   defaultValue={f?.[`formato_${type}_stock` as keyof LibroFormData] !== undefined ? String(f?.[(`formato_${type}_stock`) as keyof LibroFormData]) : ''}
-                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-orange-500 focus:outline-none"
+                  className="h-9 w-24 rounded-md border border-slate-300 bg-white px-3 text-right text-sm focus:border-orange-500 focus:outline-none"
                 />
               </label>
             </div>

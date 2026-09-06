@@ -21,7 +21,7 @@ export function PromoBar() {
   return (
     <div className="relative h-[var(--height-promo)] bg-brand-primary text-text-on-brand flex items-center justify-center overflow-hidden">
       <p
-        className="text-xs font-medium text-center px-[var(--space-10)] transition-opacity duration-300"
+        className="text-xs font-medium text-center px-[var(--space-10)] sm:px-[var(--space-10)] truncate max-w-[calc(100%-var(--space-8))] transition-opacity duration-300"
         aria-live="polite"
       >
         {PROMO_MESSAGES[current]}

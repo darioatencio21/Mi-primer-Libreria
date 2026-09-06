@@ -54,20 +54,20 @@ export interface BookRow {
 }
 
 export interface FormatRow {
-  book_id: string
+  bookId: string
   type: BookFormat['type']
   price: number
   stock: number
 }
 
 export interface ImageRow {
-  book_id: string
+  bookId: string
   url: string
   position: number
 }
 
 export interface TagRow {
-  book_id: string
+  bookId: string
   tag: string
 }
 
@@ -129,13 +129,13 @@ export function mapBook(
       row.discount_price != null ? usdToArs(Number(row.discount_price)) : undefined,
     discountPercentage: row.discount_percentage ?? undefined,
     formats: formats
-      .filter((f) => f.book_id === row.id)
+      .filter((f) => f.bookId === row.id)
       .map((f) => ({ type: f.type, price: usdToArs(Number(f.price)), stock: f.stock })),
     coverImage: row.cover_image_url,
     images: [
       ...new Set(
         images
-          .filter((i) => i.book_id === row.id)
+          .filter((i) => i.bookId === row.id)
           .sort((a, b) => a.position - b.position)
           .map((i) => i.url)
       ),
@@ -152,7 +152,7 @@ export function mapBook(
     isBestseller: row.is_bestseller,
     isNew: row.is_new,
     tags: tags
-      .filter((t) => t.book_id === row.id)
+      .filter((t) => t.bookId === row.id)
       .map((t) => t.tag),
   }
 }

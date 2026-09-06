@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Check, CreditCard, Truck, Lock, ChevronRight, ChevronDown } from 'lucide-react'
@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useCart, selectSubtotal } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { TrustBadges } from '@/components/ui/TrustBadges'
 import { sanitizeInput } from '@/lib/sanitize'
 import { formatArs, usdToArs } from '@/lib/format'
+import { DEFAULT_CHECKOUT_CONFIG, type CheckoutConfig } from '@/lib/checkout-config'
 import type { CartItem as CartItemType, BookFormat } from '@/lib/types'
 
 type Step = 'shipping' | 'payment' | 'confirmation'
@@ -27,26 +29,52 @@ const STEPS: { id: Step; label: string; icon: typeof Truck }[] = [
   { id: 'confirmation', label: 'Confirmación', icon: Check },
 ]
 
-const SHIPPING_METHODS = [
-  { id: 'standard', label: 'Envío estándar', time: '3-5 días hábiles', price: usdToArs(5.99) },
-  { id: 'express', label: 'Envío express', time: '24-48h', price: usdToArs(12.99) },
-  { id: 'pickup', label: 'Retiro en tienda', time: 'Disponible hoy', price: 0 },
-]
+const MAX_LENGTHS: Record<'email' | 'fullName' | 'street' | 'city' | 'postalCode', number> = {
+  email: 40,
+  fullName: 30,
+  street: 30,
+  city: 25,
+  postalCode: 10,
+}
 
-const PAYMENT_METHODS = [
-  { id: 'card', label: 'Tarjeta de crédito/débito', icon: '💳' },
-  { id: 'paypal', label: 'PayPal', icon: '🅿️' },
-  { id: 'transfer', label: 'Transferencia bancaria', icon: '🏦' },
-]
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function CheckoutPage() {
   const items = useCart((state) => state.items)
   const clearCart = useCart((state) => state.clearCart)
 
+  const [config, setConfig] = useState<CheckoutConfig>(DEFAULT_CHECKOUT_CONFIG)
   const [currentStep, setCurrentStep] = useState<Step>('shipping')
   const [shippingMethod, setShippingMethod] = useState('standard')
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [sameBillingAddress, setSameBillingAddress] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/config/checkout')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: CheckoutConfig | null) => {
+        if (cancelled || !data) return
+        setConfig(data)
+        if (!data.shippingMethods.some((m) => m.id === 'standard')) {
+          setShippingMethod(data.shippingMethods[0]?.id ?? 'standard')
+        }
+        if (!data.paymentMethods.some((m) => m.enabled && m.id === 'card')) {
+          const firstEnabled = data.paymentMethods.find((m) => m.enabled)
+          setPaymentMethod(firstEnabled?.id ?? 'card')
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const shippingMethods = config.shippingMethods.map((m) => ({
+    ...m,
+    price: usdToArs(m.price),
+  }))
+
+  const paymentMethods = config.paymentMethods.filter((m) => m.enabled)
 
   const [shippingData, setShippingData] = useState({
     email: '',
@@ -58,6 +86,10 @@ export default function CheckoutPage() {
     phone: '',
   })
 
+  const [shippingErrors, setShippingErrors] = useState<
+    Partial<Record<keyof typeof shippingData, string>>
+  >({})
+
   const [paymentData, setPaymentData] = useState({
     cardNumber: '',
     expiry: '',
@@ -65,13 +97,66 @@ export default function CheckoutPage() {
     cardName: '',
   })
 
+  const [paymentErrors, setPaymentErrors] = useState<
+    Partial<Record<keyof typeof paymentData, string>>
+  >({})
+
+  const updateShipping = (field: keyof typeof shippingData, value: string) => {
+    setShippingData((prev) => ({ ...prev, [field]: value }))
+    setShippingErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev))
+  }
+
+  const updatePhone = (value: string) => {
+    const digits = value.replace(/\D/g, '')
+    if (digits.length > 13) return
+    updateShipping('phone', sanitizeInput(value).replace(/[^\d+()\-\s.]/g, ''))
+  }
+
+  const updatePayment = (field: keyof typeof paymentData, value: string) => {
+    setPaymentData((prev) => ({ ...prev, [field]: value }))
+    setPaymentErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev))
+  }
+
   const subtotal = selectSubtotal(items)
-  const shippingCost = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.price || 0
+  const freeShippingEligible = subtotal >= config.freeShippingThreshold
+  const baseShippingCost = shippingMethods.find((m) => m.id === shippingMethod)?.price || 0
+  const shippingCost = freeShippingEligible && shippingMethod !== 'pickup' ? 0 : baseShippingCost
   const tax = subtotal * 0.21
   const total = subtotal + shippingCost + tax
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    const errors: Partial<Record<keyof typeof shippingData, string>> = {}
+
+    if (!shippingData.email.trim()) errors.email = 'El email es obligatorio.'
+    else if (shippingData.email.length > MAX_LENGTHS.email)
+      errors.email = `El email no puede superar los ${MAX_LENGTHS.email} caracteres.`
+    else if (!EMAIL_RE.test(shippingData.email)) errors.email = 'Ingresá un email válido.'
+
+    if (!shippingData.fullName.trim()) errors.fullName = 'El nombre es obligatorio.'
+    else if (shippingData.fullName.length > MAX_LENGTHS.fullName)
+      errors.fullName = `El nombre no puede superar los ${MAX_LENGTHS.fullName} caracteres.`
+
+    if (!shippingData.street.trim()) errors.street = 'La dirección es obligatoria.'
+    else if (shippingData.street.length > MAX_LENGTHS.street)
+      errors.street = `La dirección no puede superar los ${MAX_LENGTHS.street} caracteres.`
+
+    if (!shippingData.city.trim()) errors.city = 'La ciudad es obligatoria.'
+    else if (shippingData.city.length > MAX_LENGTHS.city)
+      errors.city = `La ciudad no puede superar los ${MAX_LENGTHS.city} caracteres.`
+
+    if (!shippingData.postalCode.trim()) errors.postalCode = 'El código postal es obligatorio.'
+    else if (shippingData.postalCode.length > MAX_LENGTHS.postalCode)
+      errors.postalCode = `El código postal no puede superar los ${MAX_LENGTHS.postalCode} caracteres.`
+
+    const phoneDigits = shippingData.phone.replace(/\D/g, '')
+    if (!shippingData.phone.trim()) errors.phone = 'El teléfono es obligatorio.'
+    else if (phoneDigits.length < 6 || phoneDigits.length > 13)
+      errors.phone = 'Ingresá un teléfono válido (entre 6 y 13 dígitos).'
+
+    setShippingErrors(errors)
+    if (Object.values(errors).some(Boolean)) return
     setCurrentStep('payment')
   }
 
@@ -79,6 +164,35 @@ export default function CheckoutPage() {
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    const errors: Partial<Record<keyof typeof paymentData, string>> = {}
+
+    if (paymentMethod === 'card' && paymentMethods.some((m) => m.id === 'card')) {
+      if (paymentData.cardNumber.replace(/\D/g, '').length !== 16)
+        errors.cardNumber = 'El número de tarjeta debe tener 16 dígitos.'
+
+      const expMatch = /^(\d{2})\/(\d{2})$/.exec(paymentData.expiry.trim())
+      if (!expMatch) errors.expiry = 'Usá el formato MM/AA.'
+      else {
+        const month = Number(expMatch[1])
+        const year = 2000 + Number(expMatch[2])
+        if (month < 1 || month > 12) errors.expiry = 'El mes no es válido.'
+        else {
+          const now = new Date()
+          if (year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1))
+            errors.expiry = 'La tarjeta está vencida.'
+        }
+      }
+
+      const cvvDigits = paymentData.cvv.replace(/\D/g, '')
+      if (cvvDigits.length < 3 || cvvDigits.length > 4) errors.cvv = 'El CVV tiene 3 o 4 dígitos.'
+
+      if (!paymentData.cardName.trim()) errors.cardName = 'El nombre del titular es obligatorio.'
+    }
+
+    setPaymentErrors(errors)
+    if (Object.values(errors).some(Boolean)) return
+
     setPlacedItems(items)
     clearCart()
     setCurrentStep('confirmation')
@@ -111,7 +225,7 @@ export default function CheckoutPage() {
                 <path d="M8 11h8" />
               </svg>
               <span className="text-[22px] font-display font-medium text-brand-primary tracking-tight">
-                Nova Books
+                Tus Libros Ya
               </span>
             </Link>
           </div>
@@ -151,24 +265,24 @@ export default function CheckoutPage() {
               <path d="M8 11h8" />
             </svg>
             <span className="text-[22px] font-display font-medium text-brand-primary tracking-tight">
-              Nova Books
+              Tus Libros Ya
             </span>
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] py-[var(--space-10)]">
+      <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] py-[var(--space-10)] pb-[calc(var(--space-10)+env(safe-area-inset-bottom))]">
         <nav className="flex items-center justify-center gap-[var(--space-4)] md:gap-[var(--space-8)] mb-[var(--space-12)]" aria-label="Progreso del checkout">
           {STEPS.map((step, index) => {
             const isCompleted = index < currentStepIndex
             const isCurrent = index === currentStepIndex
 
             return (
-              <div key={step.id} className="flex items-center gap-[var(--space-4)] md:gap-[var(--space-8)]">
-                <div className="flex items-center gap-[var(--space-3)]">
+              <div key={step.id} className="flex items-center gap-[var(--space-3)] md:gap-[var(--space-8)]">
+                <div className="flex items-center gap-[var(--space-2)] md:gap-[var(--space-3)]">
                   <div
                     className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200',
+                      'w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200',
                       isCompleted
                         ? 'bg-brand-primary text-text-on-brand'
                         : isCurrent
@@ -190,7 +304,7 @@ export default function CheckoutPage() {
                 {index < STEPS.length - 1 && (
                   <div
                     className={cn(
-                      'w-12 md:w-24 h-[2px]',
+                      'w-8 sm:w-12 md:w-24 h-[2px]',
                       index < currentStepIndex ? 'bg-brand-primary' : 'bg-border-subtle'
                     )}
                     aria-hidden="true"
@@ -257,7 +371,7 @@ export default function CheckoutPage() {
             )}
 
             {currentStep === 'shipping' && (
-              <form onSubmit={handleShippingSubmit} className="space-y-[var(--space-6)]">
+              <form onSubmit={handleShippingSubmit} noValidate className="space-y-[var(--space-6)]">
                 <h2 className="text-2xl font-display font-medium text-text-primary">
                   Información de envío
                 </h2>
@@ -266,8 +380,10 @@ export default function CheckoutPage() {
                   label="Email"
                   type="email"
                   value={shippingData.email}
-                  onChange={(e) => setShippingData({ ...shippingData, email: sanitizeInput(e.target.value) })}
+                  onChange={(e) => updateShipping('email', sanitizeInput(e.target.value))}
                   placeholder="tu@email.com"
+                  maxLength={MAX_LENGTHS.email}
+                  error={shippingErrors.email}
                   required
                   autoComplete="email"
                 />
@@ -275,8 +391,10 @@ export default function CheckoutPage() {
                 <Input
                   label="Nombre completo"
                   value={shippingData.fullName}
-                  onChange={(e) => setShippingData({ ...shippingData, fullName: sanitizeInput(e.target.value) })}
+                  onChange={(e) => updateShipping('fullName', sanitizeInput(e.target.value))}
                   placeholder="Nombre y apellido"
+                  maxLength={MAX_LENGTHS.fullName}
+                  error={shippingErrors.fullName}
                   required
                   autoComplete="name"
                 />
@@ -284,8 +402,10 @@ export default function CheckoutPage() {
                 <Input
                   label="Dirección"
                   value={shippingData.street}
-                  onChange={(e) => setShippingData({ ...shippingData, street: sanitizeInput(e.target.value) })}
+                  onChange={(e) => updateShipping('street', sanitizeInput(e.target.value))}
                   placeholder="Calle y número"
+                  maxLength={MAX_LENGTHS.street}
+                  error={shippingErrors.street}
                   required
                   autoComplete="street-address"
                 />
@@ -294,16 +414,20 @@ export default function CheckoutPage() {
                   <Input
                     label="Ciudad"
                     value={shippingData.city}
-                    onChange={(e) => setShippingData({ ...shippingData, city: sanitizeInput(e.target.value) })}
+                    onChange={(e) => updateShipping('city', sanitizeInput(e.target.value))}
                     placeholder="Ciudad"
+                    maxLength={MAX_LENGTHS.city}
+                    error={shippingErrors.city}
                     required
                     autoComplete="address-level2"
                   />
                   <Input
                     label="Código postal"
                     value={shippingData.postalCode}
-                    onChange={(e) => setShippingData({ ...shippingData, postalCode: sanitizeInput(e.target.value) })}
+                    onChange={(e) => updateShipping('postalCode', sanitizeInput(e.target.value))}
                     placeholder="1234"
+                    maxLength={MAX_LENGTHS.postalCode}
+                    error={shippingErrors.postalCode}
                     required
                     autoComplete="postal-code"
                   />
@@ -313,8 +437,10 @@ export default function CheckoutPage() {
                   label="Teléfono"
                   type="tel"
                   value={shippingData.phone}
-                  onChange={(e) => setShippingData({ ...shippingData, phone: sanitizeInput(e.target.value) })}
+                  onChange={(e) => updatePhone(e.target.value)}
                   placeholder="+54 11 1234-5678"
+                  error={shippingErrors.phone}
+                  helperText="Máximo 13 dígitos"
                   required
                   autoComplete="tel"
                 />
@@ -323,8 +449,13 @@ export default function CheckoutPage() {
                   <p className="text-sm font-medium text-text-primary mb-[var(--space-3)]">
                     Método de envío
                   </p>
+                  {freeShippingEligible && (
+                    <p className="text-xs font-medium text-success bg-success-bg rounded-[var(--radius-sm)] px-[var(--space-3)] py-[var(--space-2)] mb-[var(--space-3)]">
+                      🚚 Tu pedido supera los {formatArs(config.freeShippingThreshold)}: tenés envío gratis.
+                    </p>
+                  )}
                   <div className="flex flex-col gap-[var(--space-3)]">
-                    {SHIPPING_METHODS.map((method) => (
+                    {shippingMethods.map((method) => (
                       <label
                         key={method.id}
                         className={cn(
@@ -349,7 +480,9 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <span className="text-sm font-semibold text-text-primary">
-                          {method.price === 0 ? 'Gratis' : formatArs(method.price)}
+                          {method.price === 0 || (freeShippingEligible && method.id !== 'pickup')
+                            ? 'Gratis'
+                            : formatArs(method.price)}
                         </span>
                       </label>
                     ))}
@@ -364,13 +497,13 @@ export default function CheckoutPage() {
             )}
 
             {currentStep === 'payment' && (
-              <form onSubmit={handlePaymentSubmit} className="space-y-[var(--space-6)]">
+              <form onSubmit={handlePaymentSubmit} noValidate className="space-y-[var(--space-6)]">
                 <h2 className="text-2xl font-display font-medium text-text-primary">
                   Método de pago
                 </h2>
 
                 <div className="flex flex-col gap-[var(--space-3)]">
-                  {PAYMENT_METHODS.map((method) => (
+                  {paymentMethods.map((method) => (
                     <label
                       key={method.id}
                       className={cn(
@@ -399,8 +532,11 @@ export default function CheckoutPage() {
                     <Input
                       label="Número de tarjeta"
                       value={paymentData.cardNumber}
-                      onChange={(e) => setPaymentData({ ...paymentData, cardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+                      onChange={(e) =>
+                        updatePayment('cardNumber', e.target.value.replace(/\D/g, '').slice(0, 16))
+                      }
                       placeholder="1234 5678 9012 3456"
+                      error={paymentErrors.cardNumber}
                       required
                       autoComplete="cc-number"
                     />
@@ -412,17 +548,21 @@ export default function CheckoutPage() {
                         onChange={(e) => {
                           let val = e.target.value.replace(/\D/g, '')
                           if (val.length >= 2) val = val.slice(0, 2) + '/' + val.slice(2, 4)
-                          setPaymentData({ ...paymentData, expiry: val })
+                          updatePayment('expiry', val)
                         }}
                         placeholder="MM/AA"
+                        error={paymentErrors.expiry}
                         required
                         autoComplete="cc-exp"
                       />
                       <Input
                         label="CVV"
                         value={paymentData.cvv}
-                        onChange={(e) => setPaymentData({ ...paymentData, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                        onChange={(e) =>
+                          updatePayment('cvv', e.target.value.replace(/\D/g, '').slice(0, 4))
+                        }
                         placeholder="123"
+                        error={paymentErrors.cvv}
                         required
                         autoComplete="cc-csc"
                         helperText="3 o 4 dígitos en el reverso"
@@ -432,8 +572,11 @@ export default function CheckoutPage() {
                     <Input
                       label="Nombre del titular"
                       value={paymentData.cardName}
-                      onChange={(e) => setPaymentData({ ...paymentData, cardName: sanitizeInput(e.target.value) })}
+                      onChange={(e) =>
+                        updatePayment('cardName', sanitizeInput(e.target.value))
+                      }
                       placeholder="Como aparece en la tarjeta"
+                      error={paymentErrors.cardName}
                       required
                       autoComplete="cc-name"
                     />
@@ -465,6 +608,10 @@ export default function CheckoutPage() {
                     Confirmar pedido
                   </Button>
                 </div>
+
+                <div className="pt-[var(--space-2)]">
+                  <TrustBadges compact />
+                </div>
               </form>
             )}
 
@@ -493,7 +640,7 @@ export default function CheckoutPage() {
                   ¡Gracias por tu pedido, {shippingData.fullName.split(' ')[0] || 'lector'}!
                 </h2>
                 <p className="text-base text-text-secondary mb-[var(--space-2)]">
-                  Pedido #NB-{orderNumber}
+                  Pedido #{orderNumber}
                 </p>
                 <p className="text-sm text-text-tertiary mb-[var(--space-8)]">
                   Te enviamos los detalles a tu correo ({shippingData.email || 'tu email'}).
@@ -523,7 +670,7 @@ export default function CheckoutPage() {
                     <p className="text-sm text-text-secondary">
                       Tiempo estimado de entrega:{' '}
                       <strong className="text-text-primary">
-                        {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.time}
+                        {shippingMethods.find((m) => m.id === shippingMethod)?.time}
                       </strong>
                     </p>
                   </div>

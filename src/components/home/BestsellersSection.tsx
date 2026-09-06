@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import { BookCard } from '@/components/product/BookCard'
-import { Carousel } from '@/components/ui/Carousel'
-import { getBestsellers } from '@/lib/data'
+import { FormatFilterShelf } from '@/components/home/FormatFilterShelf'
+import { getBestsellers, getReviewPreviewsByBooks } from '@/lib/data'
 
 export async function BestsellersSection() {
   const bestsellers = await getBestsellers(10)
+  const reviewPreviews = await getReviewPreviewsByBooks(bestsellers)
 
   return (
-    <section className="py-[var(--space-24)]">
+    <section className="pt-[var(--space-16)] md:pt-[var(--space-24)] pb-[var(--space-24)]">
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
         <div className="flex items-end justify-between mb-[var(--space-8)]">
           <h2 className="text-2xl md:text-4xl font-display font-normal text-text-primary tracking-[var(--tracking-4xl)]">
@@ -15,19 +15,15 @@ export async function BestsellersSection() {
           </h2>
           <Link
             href="/libros/bestsellers"
-            className="hidden sm:inline-flex text-sm font-semibold text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px]"
+            className="hidden sm:inline-flex items-center gap-[var(--space-1)] text-sm font-semibold text-brand-primary hover:underline decoration-[1.5px] underline-offset-[3px] transition-transform duration-[var(--duration-micro)] hover:translate-x-0.5"
           >
             Ver todos →
           </Link>
         </div>
 
-        <Carousel gap={24}>
-          {bestsellers.map((book) => (
-            <div key={book.id} className="w-[280px] md:w-[300px]">
-              <BookCard book={book} />
-            </div>
-          ))}
-        </Carousel>
+        {bestsellers.length > 0 && (
+          <FormatFilterShelf books={bestsellers} variant="carousel" reviewPreviews={reviewPreviews} />
+        )}
       </div>
     </section>
   )

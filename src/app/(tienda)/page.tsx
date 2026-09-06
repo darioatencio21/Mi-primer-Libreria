@@ -5,8 +5,9 @@ import {
   BestsellersSection,
   EditorialBanner,
   RecommendedSection,
+  QuizSection,
   AuthorsSection,
-  WhyNovaBooks,
+  WhyUsSection,
   TestimonialsSection,
   NewsletterSection,
 } from '@/components/home'
@@ -21,9 +22,10 @@ export default function Home() {
       <CategoriesSection />
       <BestsellersSection />
       <EditorialBanner />
+      <QuizSection />
       <RecommendedSection />
       <AuthorsSection />
-      <WhyNovaBooks />
+      <WhyUsSection />
       <TestimonialsSection />
       <NewsletterSection />
     </>

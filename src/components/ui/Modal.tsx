@@ -95,12 +95,12 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'relative bg-bg-elevated rounded-[20px] shadow-[var(--shadow-xl)] w-full animate-[fadeInUp_280ms_var(--ease-out-quint)]',
+          'relative bg-bg-elevated rounded-[20px] shadow-[var(--shadow-xl)] w-full flex flex-col max-h-[calc(100dvh-2*var(--space-4))] overflow-hidden animate-[fadeInUp_280ms_var(--ease-out-quint)]',
           size === 'default' ? 'max-w-[480px]' : 'max-w-[720px]'
         )}
       >
-        <div className="flex items-center justify-between p-[var(--space-6)] border-b border-border-subtle">
-          <h2 id="modal-title" className="text-xl font-semibold font-display text-text-primary">
+        <div className="flex items-center justify-between shrink-0 p-[var(--space-4)] sm:p-[var(--space-6)] border-b border-border-subtle">
+          <h2 id="modal-title" className="text-lg sm:text-xl font-semibold font-display text-text-primary">
             {title}
           </h2>
           <button
@@ -111,7 +111,7 @@ export function Modal({
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-[var(--space-6)]">{children}</div>
+        <div className="p-[var(--space-4)] sm:p-[var(--space-6)] overflow-y-auto">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-[var(--space-3)] p-[var(--space-6)] border-t border-border-subtle">
             {footer}

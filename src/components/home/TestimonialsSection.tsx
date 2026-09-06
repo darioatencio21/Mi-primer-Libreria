@@ -1,31 +1,40 @@
 import { Star } from 'lucide-react'
 import { Carousel } from '@/components/ui/Carousel'
+import { getRecentReviews } from '@/lib/data'
 
-const MOCK_TESTIMONIALS = [
+const FALLBACK_TESTIMONIALS = [
   {
-    id: 't1',
     name: 'María González',
-    role: 'Profesora universitaria',
+    bookTitle: 'Profesora universitaria',
     rating: 5,
-    quote: 'Tus Libros Ya transformó mi forma de descubrir libros. La curaduría es impecable y el servicio es excepcional.',
+    content: 'Tus Libros Ya transformó mi forma de descubrir libros. La curaduría es impecable y el servicio es excepcional.',
   },
   {
-    id: 't2',
     name: 'Carlos Ruiz',
-    role: 'Escritor',
+    bookTitle: 'Escritor',
     rating: 5,
-    quote: 'Como autor, valoro que una librería entienda la importancia de cada libro. Tus Libros Ya lo hace.',
+    content: 'Como autor, valoro que una librería entienda la importancia de cada libro. Tus Libros Ya lo hace.',
   },
   {
-    id: 't3',
     name: 'Ana Martínez',
-    role: 'Estudiante de doctorado',
+    bookTitle: 'Estudiante de doctorado',
     rating: 5,
-    quote: 'Encontré textos académicos que no estaban en ningún otro lado. El envío fue rápido y el empaque, perfecto.',
+    content: 'Encontré textos académicos que no estaban en ningún otro lado. El envío fue rápido y el empaque, perfecto.',
   },
 ]
 
-export function TestimonialsSection() {
+export async function TestimonialsSection() {
+  const reviews = await getRecentReviews(8)
+  const testimonials =
+    reviews.length > 0
+      ? reviews.map((r) => ({
+          name: r.userName,
+          bookTitle: r.bookTitle,
+          rating: r.rating,
+          content: r.content,
+        }))
+      : FALLBACK_TESTIMONIALS
+
   return (
     <section className="py-[var(--space-24)]">
       <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
@@ -39,26 +48,28 @@ export function TestimonialsSection() {
         </div>
 
         <Carousel gap={24} showDots>
-          {MOCK_TESTIMONIALS.map((testimonial) => (
+          {testimonials.map((testimonial, i) => (
             <div
-              key={testimonial.id}
+              key={i}
               className="w-[320px] md:w-[400px] bg-bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-[var(--space-6)]"
             >
               <div className="flex items-center gap-[var(--space-1)] mb-[var(--space-4)]" aria-label={`${testimonial.rating} de 5 estrellas`}>
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
+                {Array.from({ length: 5 }).map((_, s) => (
                   <Star
-                    key={i}
-                    className="w-4 h-4 fill-accent-gold text-accent-gold"
+                    key={s}
+                    className={`w-4 h-4 ${s < testimonial.rating ? 'fill-accent-gold text-accent-gold' : 'text-border-subtle'}`}
                     aria-hidden="true"
                   />
                 ))}
               </div>
               <blockquote className="text-base text-text-primary mb-[var(--space-6)] leading-relaxed">
-                &ldquo;{testimonial.quote}&rdquo;
+                &ldquo;{testimonial.content}&rdquo;
               </blockquote>
               <div>
                 <p className="text-sm font-semibold text-text-primary">{testimonial.name}</p>
-                <p className="text-xs text-text-tertiary">{testimonial.role}</p>
+                {testimonial.bookTitle && (
+                  <p className="text-xs text-text-tertiary">{testimonial.bookTitle}</p>
+                )}
               </div>
             </div>
           ))}
@@ -67,4 +78,3 @@ export function TestimonialsSection() {
     </section>
   )
 }
-

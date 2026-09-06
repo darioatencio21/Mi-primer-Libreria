@@ -126,7 +126,7 @@ create table profiles (
 
 create table reviews (
   id uuid primary key default gen_random_uuid(),
-  book_id uuid not null references books(id) on delete cascade,
+  book_id uuid references books(id) on delete set null,
   user_id uuid,
   user_name text not null,
   rating integer not null check (rating between 1 and 5),
@@ -199,6 +199,14 @@ create index cart_items_user_id_idx on cart_items (user_id);
 create index wishlist_items_user_id_idx on wishlist_items (user_id);
 create index orders_user_id_idx on orders (user_id);
 create index order_items_order_id_idx on order_items (order_id);
+
+-- ---------- Configuración de la tienda (pagos, envíos, precios) ----------
+
+create table settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
 
 -- ---------- Triggers ----------
 

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X, Clock, TrendingUp, ArrowRight } from 'lucide-react'
 import { sanitizeSearchQuery } from '@/lib/sanitize'
-import { formatArs, usdToArs } from '@/lib/format'
+import { formatArs } from '@/lib/format'
 
 const MOCK_RECENT = ['García Márquez', 'Sapiens', 'Novela negra']
 const MOCK_TRENDS = ['Haruki Murakami', 'Ciencia ficción', 'Historia', 'Isabel Allende', 'Borges']
@@ -17,6 +17,36 @@ const MOCK_CATEGORIES = [
   { name: 'Académico', icon: 'graduation-cap' },
 ]
 
+interface LiveSearchResult {
+  id: string
+  title: string
+  slug: string
+  categorySlug: string
+  coverImage: string
+  authorName: string
+  price: number
+  rating: number
+}
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const q = query.trim()
+  if (!q) return <>{text}</>
+  const parts = text.split(new RegExp(`(${q})`, 'i'))
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === q.toLowerCase() ? (
+          <strong key={i} className="font-semibold">
+            {part}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
+
 export function SearchPanel({
   isOpen,
   onClose,
@@ -26,11 +56,41 @@ export function SearchPanel({
 }) {
   const [query, setQuery] = useState('')
   const [recentSearches, setRecentSearches] = useState(MOCK_RECENT)
+  const [liveResults, setLiveResults] = useState<LiveSearchResult[]>([])
+  const [searching, setSearching] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
 
   const showResults = useMemo(() => query.trim().length > 0, [query])
+
+  const runSearch = useCallback((q: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    setSearching(true)
+    searchTimerRef.current = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        .then((res) => res.json())
+        .then((data: { results: LiveSearchResult[] }) => setLiveResults(data.results ?? []))
+        .catch(() => setLiveResults([]))
+        .finally(() => setSearching(false))
+    }, 220)
+  }, [])
+
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      setQuery(value)
+      const q = value.trim()
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+      if (q.length < 2) {
+        setLiveResults([])
+        setSearching(false)
+        return
+      }
+      runSearch(q)
+    },
+    [runSearch]
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -45,7 +105,10 @@ export function SearchPanel({
   }, [isOpen])
 
   const handleClose = useCallback(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     setQuery('')
+    setLiveResults([])
+    setSearching(false)
     onClose()
   }, [onClose])
 
@@ -91,7 +154,7 @@ export function SearchPanel({
               ref={inputRef}
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Busca por título, autor, ISBN o editorial..."
               className="flex-1 h-[var(--height-search)] bg-transparent text-base text-text-primary placeholder:text-text-tertiary outline-none"
               role="combobox"
@@ -103,7 +166,7 @@ export function SearchPanel({
             {query && (
               <button
                 type="button"
-                onClick={() => setQuery('')}
+                onClick={() => handleQueryChange('')}
                 className="p-[var(--space-1)] text-text-tertiary hover:text-text-primary transition-colors duration-[var(--duration-micro)]"
                 aria-label="Limpiar búsqueda"
               >
@@ -201,84 +264,57 @@ export function SearchPanel({
               </>
             ) : (
               <>
-                <div className="mb-[var(--space-4)]">
-                  <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-[var(--space-2)]">
-                    Sugerencias
-                  </p>
-                  {['Cien años de soledad', 'El coronel no tiene quien le escriba', 'Crónica de una muerte anunciada'].slice(0, 4).map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="w-full flex items-center gap-[var(--space-3)] px-[var(--space-3)] py-[var(--space-2)] rounded-[var(--radius-sm)] hover:bg-bg-muted transition-colors duration-[var(--duration-micro)] text-left"
-                    >
-                      <Search className="w-4 h-4 text-text-tertiary" aria-hidden="true" />
-                      <span className="text-sm text-text-primary">
-                        {suggestion.split(new RegExp(`(${query})`, 'i')).map((part, i) =>
-                          part.toLowerCase() === query.toLowerCase() ? (
-                            <strong key={i} className="font-semibold">{part}</strong>
-                          ) : (
-                            <span key={i}>{part}</span>
-                          )
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mb-[var(--space-4)]">
-                  <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-[var(--space-2)]">
-                    Libros
-                  </p>
-                  {[
-                    { id: '1', title: 'Cien años de soledad', author: 'Gabriel García Márquez', price: usdToArs(24.99), coverImage: '/placeholder-book.svg', slug: 'cien-anos-de-soledad', categorySlug: 'ficcion' },
-                    { id: '2', title: 'El amor en los tiempos del cólera', author: 'Gabriel García Márquez', price: usdToArs(18.39), coverImage: '/placeholder-book.svg', slug: 'amor-tiempos-colera', categorySlug: 'ficcion' },
-                  ].map((book) => (
-                    <Link
-                      key={book.id}
-                      href={`/libros/${book.categorySlug}/${book.slug}`}
-                      onClick={handleClose}
-                      className="flex items-center gap-[var(--space-3)] px-[var(--space-3)] py-[var(--space-2)] rounded-[var(--radius-sm)] hover:bg-bg-muted transition-colors duration-[var(--duration-micro)]"
-                    >
-                      <div className="w-10 h-14 rounded-[var(--radius-sm)] bg-bg-muted overflow-hidden shrink-0 relative">
-                        <Image src={book.coverImage} alt="" fill className="object-contain p-1" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text-primary truncate">{book.title}</p>
-                        <p className="text-xs text-text-tertiary">{book.author}</p>
-                      </div>
-                      <span className="text-sm font-semibold text-text-primary shrink-0">
-                        {formatArs(book.price)}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="mb-[var(--space-4)]">
-                  <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-[var(--space-2)]">
-                    Autores
-                  </p>
-                  {[
-                    { id: 'a1', name: 'Gabriel García Márquez', bookCount: 12, slug: 'garcia-marquez' },
-                  ].map((author) => (
-                    <Link
-                      key={author.id}
-                      href={`/autores/${author.slug}`}
-                      onClick={handleClose}
-                      className="flex items-center gap-[var(--space-3)] px-[var(--space-3)] py-[var(--space-2)] rounded-[var(--radius-sm)] hover:bg-bg-muted transition-colors duration-[var(--duration-micro)]"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center shrink-0">
-                        <span className="text-xs font-semibold text-text-tertiary">
-                          {author.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-text-primary">{author.name}</p>
-                        <p className="text-xs text-text-tertiary">{author.bookCount} libros</p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-text-tertiary" aria-hidden="true" />
-                    </Link>
-                  ))}
-                </div>
+                {searching ? (
+                  <div className="py-[var(--space-6)] text-center">
+                    <p className="text-sm text-text-tertiary">Buscando…</p>
+                  </div>
+                ) : liveResults.length > 0 ? (
+                  <div className="mb-[var(--space-4)]">
+                    <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-[var(--space-2)]">
+                      Libros
+                    </p>
+                    <ul>
+                      {liveResults.map((book) => (
+                        <li key={book.id}>
+                          <Link
+                            href={`/libros/${book.categorySlug}/${book.slug}`}
+                            onClick={handleClose}
+                            className="flex items-center gap-[var(--space-3)] px-[var(--space-3)] py-[var(--space-2)] rounded-[var(--radius-sm)] hover:bg-bg-muted transition-colors duration-[var(--duration-micro)]"
+                          >
+                            <div className="w-10 h-14 rounded-[var(--radius-sm)] bg-bg-muted overflow-hidden shrink-0 relative">
+                              <Image src={book.coverImage} alt="" fill className="object-contain p-1" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-text-primary truncate">
+                                <Highlight text={book.title} query={query} />
+                              </p>
+                              <p className="text-xs text-text-tertiary truncate">
+                                <Highlight text={book.authorName} query={query} />
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-semibold text-text-primary">
+                                {formatArs(book.price)}
+                              </p>
+                              <p className="text-xs text-accent-gold font-medium">
+                                ★ {book.rating}
+                              </p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="py-[var(--space-8)] text-center">
+                    <p className="text-sm text-text-secondary">
+                      No encontramos libros para &ldquo;{query}&rdquo;.
+                    </p>
+                    <p className="text-xs text-text-tertiary mt-[var(--space-1)]">
+                      Probá con otro título, autor o categoría.
+                    </p>
+                  </div>
+                )}
 
                 <div className="border-t border-border-subtle pt-[var(--space-3)]">
                   <button

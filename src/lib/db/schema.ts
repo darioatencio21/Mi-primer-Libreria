@@ -146,6 +146,12 @@ export const bookTags = pgTable(
   (t) => [index('book_tags_book_id_idx').on(t.bookId), uniqueIndex('book_tags_book_id_tag_unique').on(t.bookId, t.tag)]
 )
 
+export const settings = pgTable('settings', {
+  key: text('key').primaryKey(),
+  value: jsonb('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+})
+
 export const profiles = pgTable('profiles', {
   id: uuid('id')
     .primaryKey()
@@ -161,9 +167,7 @@ export const reviews = pgTable(
   'reviews',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    bookId: uuid('book_id')
-      .notNull()
-      .references(() => books.id, { onDelete: 'cascade' }),
+    bookId: uuid('book_id').references(() => books.id, { onDelete: 'set null' }),
     userId: uuid('user_id'),
     userName: text('user_name').notNull(),
     rating: integer('rating').notNull(),

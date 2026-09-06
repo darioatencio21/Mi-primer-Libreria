@@ -5,7 +5,7 @@ import { sanitizeSearchQuery } from '@/lib/sanitize'
 
 export const metadata: Metadata = {
   title: 'Buscar libros',
-  description: 'Buscá por título, autor, ISBN o editorial en Nova Books.',
+  description: 'Buscá por título, autor, ISBN o editorial en Tus Libros Ya.',
 }
 
 interface SearchPageProps {

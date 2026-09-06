@@ -9,6 +9,8 @@ interface CarouselProps {
   showDots?: boolean
   className?: string
   gap?: number
+  edgeFade?: boolean
+  snapMode?: 'mandatory' | 'proximity' | 'none'
 }
 
 export function Carousel({
@@ -16,6 +18,8 @@ export function Carousel({
   showDots = false,
   className,
   gap = 24,
+  edgeFade = false,
+  snapMode = 'mandatory',
 }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -91,7 +95,13 @@ export function Carousel({
     <div className="relative [&:hover_.carousel-arrow]:opacity-100">
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+        className={cn(
+          'flex overflow-x-auto scroll-smooth scrollbar-hide overscroll-x-contain touch-pan-x',
+          snapMode === 'mandatory' && 'snap-x snap-mandatory',
+          snapMode === 'proximity' && 'snap-x snap-proximity',
+          edgeFade &&
+            '[mask-image:linear-gradient(to_right,#000_90%,transparent_100%)] lg:[mask-image:none]'
+        )}
         style={{ gap, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {children.map((child, i) => (
