@@ -166,8 +166,8 @@ export function Header() {
       )}
     >
       <div className="w-full flex items-center h-[var(--height-header)]">
-        <div className="mx-auto max-w-[var(--container-max)] w-full h-full flex items-center justify-between px-[var(--space-4)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
-          <div className="flex items-center gap-[var(--space-2)] md:gap-[var(--space-4)]">
+        <div className="mx-auto max-w-[var(--container-max)] w-full h-full grid grid-cols-[1fr_auto_1fr] items-center px-[var(--space-4)] md:px-[var(--space-10)] lg:px-[var(--space-16)]">
+          <div className="flex items-center gap-[var(--space-2)] md:gap-[var(--space-4)] justify-self-start">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2.5 -ml-[var(--space-2)] text-text-primary hover:text-brand-primary transition-colors duration-[var(--duration-micro)]"
@@ -199,7 +199,7 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="hidden md:flex flex-1 max-w-[560px] mx-[var(--space-8)]">
+          <div className="hidden md:flex w-full max-w-[560px] justify-self-center mx-[var(--space-4)]">
             <button
               onClick={() => setSearchOpen(true)}
               className="w-full h-[var(--height-search)] flex items-center gap-[var(--space-3)] px-[var(--space-4)] bg-bg-muted rounded-[var(--radius-md)] text-text-tertiary text-sm transition-all duration-[var(--duration-micro)] hover:bg-bg-muted/80"
@@ -209,9 +209,8 @@ export function Header() {
               <span>Busca por título, autor, ISBN o editorial...</span>
             </button>
           </div>
-        </div>
 
-          <div className="flex items-center gap-[var(--space-1)] ml-auto pr-[var(--space-1)] md:pr-[var(--space-10)] lg:pr-[var(--space-16)]">
+          <div className="flex items-center gap-[var(--space-1)] justify-self-end">
             <button
               onClick={() => setSearchOpen(true)}
               className="md:hidden p-2.5 text-text-primary hover:text-brand-primary hover:scale-105 transition-all duration-[var(--duration-micro)]"
@@ -246,6 +245,7 @@ export function Header() {
               )}
             </button>
           </div>
+        </div>
       </div>
 
       <nav

@@ -79,7 +79,6 @@ export function Hero() {
                 alt="Pila de libros de la colección"
                 fill
                 sizes="(max-width: 767px) calc(100vw - 6rem), (max-width: 1023px) calc(100vw - 11rem), 560px"
-                priority
                 className="object-cover"
               />
             </div>

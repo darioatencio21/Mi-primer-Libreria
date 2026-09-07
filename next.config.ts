@@ -52,6 +52,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
     formats: ['image/avif', 'image/webp'],
   },
+  watchOptions: {
+    pollIntervalMs: 1000,
+  },
   async headers() {
     return [
       {
