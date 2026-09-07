@@ -7,7 +7,7 @@ import { ErpInventoryProvider } from './inventory/erp'
 import { PostgresOrderStore } from './orders/postgres'
 import { ErpOrderStore } from './orders/erp'
 import { PostgresCatalogProvider } from './catalog/postgres'
-import { SaaSCatalogProvider } from './catalog/saas'
+import { RestCatalogProvider } from './catalog/rest'
 
 /**
  * REGISTRO DE ADAPTADORES (factory).
@@ -19,7 +19,9 @@ import { SaaSCatalogProvider } from './catalog/saas'
  *   ORDERS_PROVIDER    = 'postgres' | 'erp'
  *   INVENTORY_PROVIDER = 'postgres' | 'erp'
  *   PAYMENT_PROVIDER   = 'manual'   | 'merchant'
- *   CATALOG_API_URL    = endpoint GraphQL del SaaS (libros/catálogo)
+ *   CATALOG_API_URL    = base REST de Camaleón (catálogo en ARS)
+ *   CATALOG_API_TOKEN  = token Bearer opcional (JWT de negocio)
+ *   CATALOG_API_TENANT_SLUG = slug multi-tenant (header X-Tenant-Slug)
  *   ERP_API_URL        = base del SaaS de ustedes (ERP/logística/pedidos)
  *   MERCHANT_API_URL   = base de la pasarela de pagos
  *
@@ -34,7 +36,7 @@ function enabled(name: string, fallback: string): string {
 export function getCatalogProvider(): CatalogProvider {
   switch (enabled('CATALOG_PROVIDER', 'postgres')) {
     case 'saas':
-      return new SaaSCatalogProvider(process.env.CATALOG_API_URL)
+      return new RestCatalogProvider(process.env.CATALOG_API_URL)
     case 'postgres':
     default:
       return new PostgresCatalogProvider()

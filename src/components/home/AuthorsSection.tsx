@@ -1,12 +1,11 @@
 import Link from 'next/link'
 import { Carousel } from '@/components/ui/Carousel'
-import { getFeaturedAuthors, getAllAuthors } from '@/lib/data'
-import { AuthorAvatar } from '@/components/ui/AuthorAvatar'
-import { AuthorsExpander } from './AuthorsExpander'
+import { getFeaturedAuthors } from '@/lib/data'
+import { AuthorCard } from '@/components/ui/AuthorCard'
+import { Plus } from 'lucide-react'
 
 export async function AuthorsSection() {
   const featured = await getFeaturedAuthors(10)
-  const all = await getAllAuthors()
 
   return (
     <section className="py-[var(--space-24)]">
@@ -17,23 +16,22 @@ export async function AuthorsSection() {
 
         <Carousel gap={16} showDots snapMode="proximity">
           {featured.map((author) => (
-            <Link
-              key={author.id}
-              href={`/autores/${author.slug}`}
-              className="w-[160px] flex flex-col items-center text-center group"
-            >
-              <div className="w-28 h-28 rounded-full bg-bg-muted border-2 border-border-subtle overflow-hidden mb-[var(--space-4)] group-hover:border-brand-primary transition-colors duration-200">
-                <AuthorAvatar name={author.name} photo={author.photo} variant="circle" sizes="112px" />
-              </div>
-              <h3 className="text-base font-semibold text-text-primary mb-[var(--space-1)] group-hover:text-brand-primary transition-colors duration-[var(--duration-micro)]">
-                {author.name}
-              </h3>
-              <p className="text-xs text-text-tertiary">{author.bookCount} libros</p>
-            </Link>
+            <AuthorCard key={author.id} author={author} className="w-[160px]" />
           ))}
-        </Carousel>
 
-        <AuthorsExpander authors={all} />
+          <Link
+            href="/autores"
+            className="w-[160px] flex flex-col items-center text-center group"
+            aria-label="Ver todos los autores"
+          >
+            <div className="w-28 h-28 rounded-full bg-bg-muted border-2 border-dashed border-border-subtle flex items-center justify-center text-text-tertiary mb-[var(--space-4)] group-hover:border-brand-primary group-hover:text-brand-primary transition-colors duration-200">
+              <Plus className="w-9 h-9" aria-hidden="true" />
+            </div>
+            <span className="text-base font-semibold text-text-primary group-hover:text-brand-primary transition-colors duration-[var(--duration-micro)]">
+              Ver más
+            </span>
+          </Link>
+        </Carousel>
       </div>
     </section>
   )

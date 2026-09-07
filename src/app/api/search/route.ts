@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchBooks } from '@/lib/data'
+import { sanitizeSearchQuery } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   const raw = request.nextUrl.searchParams.get('q') ?? ''
-  const q = raw.replace(/[<>]/g, '').slice(0, 100).trim()
+  const q = sanitizeSearchQuery(raw).slice(0, 50).trim()
   if (q.length < 2) return NextResponse.json({ results: [] })
 
   const books = await searchBooks(q, 6)

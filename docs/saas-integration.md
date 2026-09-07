@@ -1,16 +1,19 @@
-# Conexión a un SaaS externo (pasarelas de pago + ERP/inventario/logística)
+# Conexión a Camaleón (SaaS: POS/catálogo + inventario/logística)
 
-Este proyecto está preparado para conectarse en el futuro a un SaaS **externo
-desarrollado por ustedes mismos**, cubriendo tres necesidades:
+Este proyecto está preparado para conectarse a **Camaleón SaaS** — plataforma
+multi-tenant de punto de venta (POS) y gestión, enfocada al mercado argentino
+(facturación ARCA, stock por sucursal, pedidos). Camaleón es una API **REST/JSON**
+(Express + MariaDB vía Prisma), con **precios en pesos argentinos (ARS)** y
+multi-tenant por `businessId` (JWT) + header `X-Tenant-Slug`.
 
-- **Catálogo de libros** (libros, precios, imágenes, stock) vía GraphQL.
-- **Pasarela de pagos** (cobro real de los pedidos).
-- **ERP / inventario / logística** (gestión de stock y centralización de pedidos).
+Camaleón cubre dos de las necesidades:
 
-Toda la lógica de negocio (cobro, stock, creación de pedidos) se escribe contra
-**puertos (interfaces)** y los proveedores concretos se resuelven como
-**adaptadores** seleccionables por variables de entorno. Así, activar el SaaS
-externo **no requiere reescribir el checkout**: solo hay que apuntar la config.
+- **Catálogo de libros** (libros, precios en ARS, imágenes, stock) vía **REST**
+  (ver `docs/saas-catalog-rest.md` para el contrato exacto).
+- **ERP / inventario** (gestión de stock por sucursal y pedidos).
+
+El checkout/tienda sigue usando la lógica local (pedidos en Postgres de la tienda)
+hasta que se active cada provider por variable de entorno.
 
 ---
 
@@ -25,7 +28,7 @@ src/lib/integrations/
   actions/place-order.ts            Server action que orquesta cobro→stock→pedido
   http.ts                           Cliente HTTP tipado para llamar al SaaS
   payments/
-    manual.ts                       Cobro simulado (por defecto, gratis)
+    manual.ts                       Cobro simulado (por defecto, gratis/aprueba)
     merchant.ts                     Cobro vía pasarela externa (MERCHANT_API_URL)
   inventory/
     postgres.ts                     Stock local en Postgres (por defecto)
@@ -36,11 +39,15 @@ src/lib/integrations/
   catalog/
     ports.ts                        Puerto de catálogo (interfaz)
     postgres.ts                     Catálogo local en Postgres (por defecto)
-    saas.ts                         Catálogo vía GraphQL del SaaS (CATALOG_API_URL)
-    queries.ts                      Queries GraphQL del catálogo
-    mappers.ts                      Mapeo formato SaaS -> dominio (Book, Author...)
-    graphql.ts                      Cliente GraphQL mínimo
+    rest.ts                         Catálogo vía REST de Camaleón (CATALOG_API_URL)
+    mappers.ts                      Mapeo formato Camaleón -> dominio (Book, Author...)
 ```
+
+La tienda **no depende de Postgres ni de Camaleón directamente**: las páginas
+llaman a las funciones de `@/lib/data` (fachada) que delegan en el
+`CatalogProvider` activo del registry.
+
+---
 
 ### Los cuatro puertos (`ports.ts`)
 
@@ -68,9 +75,10 @@ INVENTORY_PROVIDER=postgres      # postgres | erp
 PAYMENT_PROVIDER=manual          # manual   | merchant
 
 # Solo si el proveedor correspondiente es 'saas', 'erp' o 'merchant'
-CATALOG_API_URL=https://mi-saas.example.com/graphql
-CATALOG_API_TOKEN=tu-token
-ERP_API_URL=https://mi-saas.example.com
+CATALOG_API_URL=https://camaleon.example.com/api   # base REST (catálogo ARS)
+CATALOG_API_TOKEN=tu-token                          # Bearer (JWT de negocio)
+CATALOG_API_TENANT_SLUG=mi-negocio                  # header X-Tenant-Slug
+ERP_API_URL=https://camaleon.example.com/api
 ERP_API_TOKEN=tu-token
 MERCHANT_API_URL=https://mi-pasarela.example.com
 MERCHANT_API_TOKEN=tu-token
@@ -78,26 +86,27 @@ MERCHANT_API_TOKEN=tu-token
 
 **Comportamiento por defecto (ya configurado):** catálogo, pedidos y stock en
 Postgres (Docker, `DATABASE_URL`), pago simulado. Todo funciona de punta a punta
-sin el SaaS.
+sin Camaleón.
 
 ---
 
-## Cómo activar el SaaS cuando estén listos
+## Cómo activar Camaleón cuando esté listo
 
-1. El backend externo expone los contratos detallados abajo
-   (ver también `docs/saas-catalog-graphql.md` para el catálogo).
+1. Camaleón expone los contratos detallados abajo
+   (ver `docs/saas-catalog-rest.md` para el catálogo).
 2. En `.env` pon los valores reales, por ejemplo:
    ```ini
    CATALOG_PROVIDER=saas
-   ORDERS_PROVIDER=erp
-   INVENTORY_PROVIDER=erp
-   PAYMENT_PROVIDER=merchant
-   CATALOG_API_URL=https://mi-empresa-saas.com/graphql
-   ERP_API_URL=https://mi-empresa-saas.com
-   MERCHANT_API_URL=https://mi-pasarela-saas.com
+   ORDERS_PROVIDER=postgres        # pedidos quedan locales por ahora
+   INVENTORY_PROVIDER=erp         # stock se lee/reserva en Camaleón
+   CATALOG_API_URL=https://camaleon.example.com/api
+   CATALOG_API_TOKEN=<jwt-del-negocio>
+   CATALOG_API_TENANT_SLUG=librostuc
+   ERP_API_URL=https://camaleon.example.com/api
+   ERP_API_TOKEN=<jwt-del-negocio>
    ```
 3. Reiniciar el servidor. La tienda y el flujo `placeOrder(..)` pasarán a hablar
-   con el SaaS sin tocar el código de las páginas ni del checkout.
+   con Camaleón sin tocar el código de las páginas ni del checkout.
 
 ---
 
@@ -105,8 +114,9 @@ sin el SaaS.
 
 ### Catálogo (`saas`)
 
-GraphQL. Ver el contrato completo en **`docs/saas-catalog-graphql.md`**.
-Requiere `CATALOG_API_URL` (endpoint GraphQL) y opcional `CATALOG_API_TOKEN`.
+REST/JSON. Ver el contrato completo en **`docs/saas-catalog-rest.md`**.
+Requiere `CATALOG_API_URL` (base REST) y opcional `CATALOG_API_TOKEN` +
+`CATALOG_API_TENANT_SLUG`.
 
 ### Pasarela de pagos (`merchant`)
 
@@ -142,6 +152,10 @@ resp: { success: boolean, reservationRef?: string,
 POST {ERP_API_URL}/api/v1/inventory/release
 body: { reservationRef: string }
 ```
+
+> Camaleón maneja stock por sucursal (`branch-stock`). El adaptador `erp` se
+> alinea con `productIdBySku`/`applyBranchStockDelta`: el `bookId` de Camaleón
+> corresponde al producto/SKU en la sucursal configurada por el token/tenant.
 
 ### ERP: pedidos (`erp`)
 
@@ -182,11 +196,10 @@ pedido creado.
   verdad.
 - Los adaptadores locales (`postgres`) escriben directo con Drizzle/pg del lado
   del servidor; no hay RLS (la app usa un único rol de aplicación).
-- Los adaptadores del catálogo `saas`/`postgres` **no reescriben el código de las
-  páginas**: la tienda sigue llamando a las mismas funciones del dominio
-  (`getBookBySlug`, `getBestsellers`, etc.). Hoy esas funciones apuntan a
-  `@/lib/data`; cuando actives `CATALOG_PROVIDER=saas`, se sirven desde el SaaS
-  (ver `docs/saas-catalog-graphql.md`).
-- Si el checkout aún hoy no está conectado a `placeOrder` (solo limpia el carrito
-  en el cliente), ese es el siguiente paso de integración: llamar a `placeOrder`
-  desde el handle de pago con los datos capturados.
+- La tienda llama a la **fachada** `@/lib/data`, que delega en el proveedor de
+  catálogo activo. Por defecto (`postgres`) el comportamiento es idéntico al
+  histórico; con `CATALOG_PROVIDER=saas` se sirve desde Camaleón sin cambiar las
+  páginas (ver `docs/saas-catalog-rest.md`).
+- El checkout ya está conectado a `placeOrder` vía `submitCheckout`
+  (`src/app/(tienda)/checkout/actions.ts`): resuelve el `userId` (sesión o
+  invitado auto-creado por email), valida/sanea insumos y orquesta cobro→stock→pedido.

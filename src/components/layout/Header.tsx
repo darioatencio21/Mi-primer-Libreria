@@ -180,6 +180,11 @@ export function Header() {
 
             <Link
               href="/"
+              onClick={() => {
+                if (pathname === '/') {
+                  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+                }
+              }}
               className="flex items-center shrink-0"
               aria-label={`${SITE_NAME} - Inicio`}
             >

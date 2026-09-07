@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useRef, useState, useEffect, useCallback, Children, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +25,8 @@ export function Carousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const [activeDot, setActiveDot] = useState(0)
+
+  const items = Children.toArray(children)
 
   const checkArrows = useCallback(() => {
     const el = scrollRef.current
@@ -81,7 +83,7 @@ export function Carousel({
     Array.from(items).forEach((child) => observer.observe(child))
 
     return () => observer.disconnect()
-  }, [showDots, children.length])
+  }, [showDots, items.length])
 
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current
@@ -96,7 +98,7 @@ export function Carousel({
       <div
         ref={scrollRef}
         className={cn(
-          'flex overflow-x-auto scroll-smooth scrollbar-hide overscroll-x-contain touch-pan-x',
+          'flex flex-nowrap overflow-x-auto scroll-smooth scrollbar-hide overscroll-x-contain touch-pan-x',
           snapMode === 'mandatory' && 'snap-x snap-mandatory',
           snapMode === 'proximity' && 'snap-x snap-proximity',
           edgeFade &&
@@ -104,7 +106,7 @@ export function Carousel({
         )}
         style={{ gap, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {children.map((child, i) => (
+        {items.map((child, i) => (
           <div key={i} className="shrink-0 snap-start">
             {child}
           </div>
@@ -132,7 +134,7 @@ export function Carousel({
 
       {showDots && (
         <div className="flex items-center justify-center gap-[var(--space-2)] mt-[var(--space-4)]">
-          {children.map((_, i) => (
+          {items.map((_, i) => (
             <button
               key={i}
               onClick={() => {

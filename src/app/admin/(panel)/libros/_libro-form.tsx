@@ -150,7 +150,7 @@ export function LibroForm({
             <div key={type} className="grid grid-cols-1 gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
               <span className="mb-0.5 text-sm font-semibold text-slate-800">{FORMATO_LABELS[type]}</span>
               <label className="flex items-center justify-between gap-3">
-                <span className="text-xs font-medium text-slate-500">Precio</span>
+                <span className="text-xs font-medium text-slate-500">Precio (ARS)</span>
                 <input
                   name={`format_${type}_price`}
                   type="number"

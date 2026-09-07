@@ -9,8 +9,8 @@ import {
   PenLine,
   Tags,
   Package,
-  MessageSquare,
   Settings,
+  PlugZap,
   LogOut,
   ExternalLink,
   Menu,
@@ -24,8 +24,8 @@ const NAV = [
   { href: '/admin/autores', label: 'Autores', icon: PenLine },
   { href: '/admin/categorias', label: 'Categorías', icon: Tags },
   { href: '/admin/pedidos', label: 'Pedidos', icon: Package },
-  { href: '/admin/resenas', label: 'Reseñas', icon: MessageSquare },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
+  { href: '/admin/saas', label: 'Conectar SaaS', icon: PlugZap },
 ]
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

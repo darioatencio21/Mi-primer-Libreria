@@ -1,7 +1,7 @@
 # ============================================================
 #  TU LIBROS YA — Dockerfile de PRODUCCIÓN (multi-stage)
 #  Construye la app Next.js con salida "standalone" y la ejecuta
-#  con Node en runtime. La base de datos (Supabase) corre aparte.
+#  con Node en runtime. La base de datos (Postgres en Docker) corre aparte.
 # ============================================================
 
 # ---------- Etapa de dependencias ----------

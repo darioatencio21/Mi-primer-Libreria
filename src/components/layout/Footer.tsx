@@ -112,7 +112,7 @@ export function Footer() {
         <div className="mx-auto max-w-[var(--container-max)] px-[var(--space-6)] md:px-[var(--space-10)] lg:px-[var(--space-16)] pt-[var(--space-5)] pb-[calc(var(--space-5)+env(safe-area-inset-bottom))] sm:pb-[var(--space-5)]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-[var(--space-3)]">
             <p className="text-xs text-footer-legal">
-              © 2026 {SITE_NAME}. Todos los derechos reservados.
+              © 2026 Estudio Camaleón. Todos los derechos reservados.
             </p>
             <div className="flex items-center gap-[var(--space-6)]">
               <Link href="/legal/terminos" className="text-xs text-footer-legal hover:text-text-on-brand transition-colors duration-[var(--duration-micro)]">

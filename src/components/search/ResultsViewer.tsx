@@ -210,10 +210,6 @@ function ListViewCard({ book }: { book: Book }) {
         <p className="text-xs text-text-tertiary mb-[var(--space-1)]">{book.author.name}</p>
         <h3 className="text-base font-semibold text-text-primary mb-[var(--space-1)]">{book.title}</h3>
         <p className="text-sm text-text-secondary line-clamp-2 mb-[var(--space-2)]">{book.description}</p>
-        <div className="flex items-center gap-[var(--space-1)]">
-          <span className="text-xs text-accent-gold">★</span>
-          <span className="text-xs text-text-tertiary">{book.rating} ({book.reviewCount})</span>
-        </div>
       </div>
       <div className="flex flex-col items-end justify-between shrink-0 gap-[var(--space-3)]">
         <span className="text-lg font-bold text-text-primary whitespace-nowrap">{formatArs(getBookDisplayPrice(book))}</span>

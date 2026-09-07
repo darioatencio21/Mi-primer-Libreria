@@ -1,16 +1,17 @@
 import type { Author, Book, BookFormat, Category, Review } from '@/lib/types'
-import { usdToArs } from '@/lib/format'
 
 /**
- * Formato gráfico que devuelve el SaaS EXTERNO (esquema distinto al de
- * Supabase). Acá se define UNA VEZ ese contrato y los mappers que lo
- * convierten a los tipos de dominio de la tienda (`Book`, `Author`, ...).
+ * Formato que devuelve el SaaS EXTERNO (Camaleón) vía REST/JSON. Este es EL
+ * ÚNICO lugar donde se define ese contrato y los mappers que lo convierten a
+ * los tipos de dominio de la tienda (`Book`, `Author`, ...).
  *
- * Si tu SaaS nombra campos distinto, ajustá estas interfaces y los mappers,
- * sin tocar el resto de la app.
+ * Camaleón es un POS argentino: los precios ya vienen en PESOS (ARS) directo,
+ * por lo que NO se convierte moneda acá. Si Camaleón nombra campos distinto
+ * o anida la respuesta, ajustá estas interfaces y los mappers sin tocar el
+ * resto de la app.
  */
 
-export interface SaaSBook {
+export interface SaaSCatalogBook {
   id: string
   title: string
   slug: string
@@ -21,52 +22,53 @@ export interface SaaSBook {
   language: string
   releaseDate: string | null
   dimensions: string | null
-  /** Precios en USD en el SaaS; la tienda los convierte a ARS. */
-  basePriceUSD: number
-  promoPriceUSD?: number | null
+  /** Precios en ARS (pesos argentinos), tal como los maneja Camaleón. */
+  basePriceARS: number
+  promoPriceARS?: number | null
   rating: number
   ratingCount: number
   stock: number
   isBestseller: boolean
   isNew: boolean
   coverImage: string
-  author: SaaSAuthor
-  category: SaaSBookCategory
-  formats: SaaSBookFormat[]
+  author: SaaSCatalogAuthor
+  category: SaaSCatalogCategory
+  formats: SaaSCatalogFormat[]
   galleryImages: string[]
   tags: string[]
 }
 
-export interface SaaSBookFormat {
+export interface SaaSCatalogFormat {
   type: BookFormat['type']
-  priceUSD: number
+  priceARS: number
   stock: number
 }
 
-export interface SaaSBookCategory {
+export interface SaaSCatalogCategory {
   id: string
   name: string
   slug: string
   description: string
   icon: string
+  bookCount?: number
 }
 
-export interface SaaSAuthor {
+export interface SaaSCatalogAuthor {
   id: string
   name: string
   slug: string
   bio: string
   photoUrl?: string
-  bookCount: number
+  bookCount?: number
 }
 
-export interface SAASCatalog {
+export interface SaaSCatalog {
   title: string
   description: string
-  books: SaaSBook[]
+  books: SaaSCatalogBook[]
 }
 
-export interface SaaSReview {
+export interface SaaSCatalogReview {
   id: string
   bookId: string
   userName: string
@@ -76,30 +78,30 @@ export interface SaaSReview {
   createdAt: string
 }
 
-export interface SaaSBookParams {
+export interface SaaSCatalogBookParams {
   categoria: string
   slug: string
 }
 
 // ---------- MAPPERS (SaaS -> dominio) ----------
 
-export function mapSaaSBook(b: SaaSBook): Book {
+export function mapSaaSCatalogBook(b: SaaSCatalogBook): Book {
   return {
     id: b.id,
     title: b.title,
     slug: b.slug,
-    author: mapSaaSBookAuthor(b.author),
-    category: mapSaaSBookCategory(b.category),
+    author: mapSaaSCatalogAuthor(b.author),
+    category: mapSaaSCatalogCategory(b.category),
     description: b.summary,
-    price: usdToArs(Number(b.basePriceUSD)),
-    discountPrice: b.promoPriceUSD != null ? usdToArs(Number(b.promoPriceUSD)) : undefined,
+    price: Number(b.basePriceARS),
+    discountPrice: b.promoPriceARS != null ? Number(b.promoPriceARS) : undefined,
     discountPercentage:
-      b.basePriceUSD && b.promoPriceUSD
-        ? Math.round((1 - Number(b.promoPriceUSD) / Number(b.basePriceUSD)) * 100)
+      b.basePriceARS && b.promoPriceARS
+        ? Math.round((1 - Number(b.promoPriceARS) / Number(b.basePriceARS)) * 100)
         : undefined,
     formats: (b.formats ?? []).map((f) => ({
       type: f.type,
-      price: usdToArs(Number(f.priceUSD)),
+      price: Number(f.priceARS),
       stock: f.stock,
     })),
     coverImage: b.coverImage,
@@ -119,29 +121,29 @@ export function mapSaaSBook(b: SaaSBook): Book {
   }
 }
 
-export function mapSaaSBookAuthor(a: SaaSAuthor): Author {
+export function mapSaaSCatalogAuthor(a: SaaSCatalogAuthor): Author {
   return {
     id: a.id,
     name: a.name,
     slug: a.slug,
     bio: a.bio ?? '',
     photo: a.photoUrl ?? undefined,
-    bookCount: a.bookCount,
+    bookCount: a.bookCount ?? 0,
   }
 }
 
-export function mapSaaSBookCategory(c: SaaSBookCategory): Category {
+export function mapSaaSCatalogCategory(c: SaaSCatalogCategory): Category {
   return {
     id: c.id,
     name: c.name,
     slug: c.slug,
     description: c.description ?? '',
     icon: c.icon ?? '',
-    bookCount: 0,
+    bookCount: c.bookCount ?? 0,
   }
 }
 
-export function mapSaaSReview(r: SaaSReview): Review {
+export function mapSaaSCatalogReview(r: SaaSCatalogReview): Review {
   return {
     id: r.id,
     bookId: r.bookId,
@@ -155,10 +157,14 @@ export function mapSaaSReview(r: SaaSReview): Review {
   }
 }
 
-export function mapSAASCatalog(c: SAASCatalog): { title: string; description: string; books: Book[] } {
+export function mapSaaSCatalog(c: SaaSCatalog): {
+  title: string
+  description: string
+  books: Book[]
+} {
   return {
     title: c.title,
     description: c.description,
-    books: (c.books ?? []).map(mapSaaSBook),
+    books: (c.books ?? []).map(mapSaaSCatalogBook),
   }
 }

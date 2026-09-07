@@ -72,7 +72,7 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
 
       <button
         onClick={() => onRemove(item.book.id)}
-        className="shrink-0 p-[var(--space-1)] text-text-tertiary hover:text-error opacity-0 group-hover:opacity-100 transition-all duration-[var(--duration-micro)] self-start"
+        className="shrink-0 p-[var(--space-1)] text-text-tertiary hover:text-error transition-colors duration-[var(--duration-micro)] self-start"
         aria-label={`Eliminar ${item.book.title} del carrito`}
       >
         <Trash2 className="w-4 h-4" />

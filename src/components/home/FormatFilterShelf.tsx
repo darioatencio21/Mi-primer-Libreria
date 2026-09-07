@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { BookCard } from '@/components/product/BookCard'
 import { Carousel } from '@/components/ui/Carousel'
 import { cn } from '@/lib/utils'
-import type { Book, BookFormat, ReviewPreview } from '@/lib/types'
+import type { Book, BookFormat } from '@/lib/types'
 
 type Filter = 'all' | 'fisico' | BookFormat['type']
 
@@ -28,10 +28,9 @@ function matchesFilter(book: Book, filter: Filter): boolean {
 interface FormatFilterShelfProps {
   books: Book[]
   variant: 'carousel' | 'grid'
-  reviewPreviews?: Record<string, ReviewPreview | null>
 }
 
-export function FormatFilterShelf({ books, variant, reviewPreviews }: FormatFilterShelfProps) {
+export function FormatFilterShelf({ books, variant }: FormatFilterShelfProps) {
   const [filter, setFilter] = useState<Filter>('all')
 
   const counts = FILTERS.map((f) => ({
@@ -84,7 +83,7 @@ export function FormatFilterShelf({ books, variant, reviewPreviews }: FormatFilt
         <Carousel gap={16} edgeFade>
           {filtered.map((book) => (
             <div key={book.id} className="w-[70vw] max-w-[300px] md:w-[300px]">
-              <BookCard book={book} reviewPreview={reviewPreviews?.[book.id] ?? undefined} />
+              <BookCard book={book} />
             </div>
           ))}
         </Carousel>
@@ -94,7 +93,6 @@ export function FormatFilterShelf({ books, variant, reviewPreviews }: FormatFilt
             <BookCard
               key={book.id}
               book={book}
-              reviewPreview={reviewPreviews?.[book.id] ?? undefined}
             />
           ))}
         </div>

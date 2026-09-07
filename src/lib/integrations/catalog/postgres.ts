@@ -1,27 +1,27 @@
 import 'server-only'
 import {
-  getAuthorBySlug,
-  getBestsellers,
   getBookBySlug,
-  getBookParams,
-  getBooksByAuthor,
-  getBooksByIds,
-  getCatalogBySlug,
-  getCatalogSlugs,
-  getFeaturedAuthors,
+  getBestsellers,
   getNewReleases,
   getRelatedBooks,
-  getReviewsByBook,
-  getAllAuthors,
+  getBooksByAuthor,
+  getBooksByIds,
   searchBooks,
-  getCategories,
-} from '@/lib/data'
+  getCatalogBySlug,
+  getCatalogSlugs,
+  getBookParams,
+} from '@/lib/data/books'
+import { getCategories } from '@/lib/data/categories'
+import { getFeaturedAuthors, getAllAuthors, getAuthorBySlug } from '@/lib/data/authors'
+import { getReviewsByBook } from '@/lib/data/reviews'
 import type { CatalogProvider } from './ports'
 
 /**
- * Adaptador de catálogo LOCAL: reenvía a las funciones de `@/lib/data`
- * (lectura de Postgres vía Drizzle). Es el proveedor por defecto mientras no
- * se conecte el SaaS externo. Mantiene exactamente el mismo comportamiento.
+ * Adaptador de catálogo LOCAL: reenvía a los módulos de datos de Postgres
+ * (`@/lib/data/{books,categories,authors,reviews}`, vía rutas profundas para
+ * evitar el ciclo con la fachada `@/lib/data`). Es el proveedor por defecto
+ * mientras no se conecte el SaaS externo. Mantiene exactamente el mismo
+ * comportamiento.
  */
 export class PostgresCatalogProvider implements CatalogProvider {
   readonly id = 'postgres'

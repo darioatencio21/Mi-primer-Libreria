@@ -80,7 +80,7 @@ export function SearchPanel({
   const handleQueryChange = useCallback(
     (value: string) => {
       setQuery(value)
-      const q = value.trim()
+      const q = value.trim().slice(0, 50)
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
       if (q.length < 2) {
         setLiveResults([])
@@ -155,6 +155,7 @@ export function SearchPanel({
               type="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
+              maxLength={50}
               placeholder="Busca por título, autor, ISBN o editorial..."
               className="flex-1 h-[var(--height-search)] bg-transparent text-base text-text-primary placeholder:text-text-tertiary outline-none"
               role="combobox"

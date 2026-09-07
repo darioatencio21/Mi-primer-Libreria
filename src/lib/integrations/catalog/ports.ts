@@ -6,11 +6,12 @@ import type { Author, Book, Category, Review } from '@/lib/types'
  *
  * Define QUÉ necesita la tienda para mostrar libros, categorías, autores y
  * reseñas. El código de la tienda (páginas y componentes server) depende de
- * esta interfaz, NO de Supabase ni del SaaS directamente.
+ * esta interfaz, NO de Postgres ni del SaaS directamente.
  *
  * La implementación por defecto (PostgresCatalogProvider) envuelve los
- * `@/lib/data` existentes. La futura SaaSCatalogProvider consultará el GraphQL
- * de tu SaaS externo. Cambiar la fuente = cambiar CATALOG_PROVIDER en .env.
+ * `@/lib/data` existentes. La RestCatalogProvider consulta la API REST de
+ * Camaleón (ver rest.ts + docs/saas-catalog-rest.md). Cambiar la fuente =
+ * cambiar CATALOG_PROVIDER en .env.
  */
 export interface CatalogProvider {
   readonly id: string

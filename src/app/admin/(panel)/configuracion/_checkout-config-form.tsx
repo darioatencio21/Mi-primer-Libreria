@@ -61,7 +61,7 @@ export function CheckoutConfigForm({ config }: { config: CheckoutConfig }) {
       <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900 mb-1">Métodos de envío</h2>
         <p className="text-sm text-slate-500 mb-5">
-          Precios en USD. Usá 0 para ofrecer ese envío gratis.
+          Precios en pesos (ARS). Usá 0 para ofrecer ese envío gratis.
         </p>
         <div className="flex flex-col gap-4">
           {form.shippingMethods.map((method) => (
@@ -97,7 +97,7 @@ export function CheckoutConfigForm({ config }: { config: CheckoutConfig }) {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-slate-700" htmlFor={`ship-price-${method.id}`}>
-                  Precio (USD)
+                  Precio (ARS)
                 </label>
                 <input
                   id={`ship-price-${method.id}`}

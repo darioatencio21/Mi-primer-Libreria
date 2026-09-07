@@ -18,3 +18,14 @@ export function usdToArs(value: number): number {
   const result = value * (isNaN(rate) || rate <= 0 ? 1300 : rate)
   return Math.round(result)
 }
+
+/**
+ * Convierte un precio en pesos argentinos a dólares usando la tasa configurada.
+ * Inversa de `usdToArs`; se usa al guardar desde el panel donde se edita en ARS
+ * y la base sigue almacenando en USD.
+ */
+export function arsToUsd(value: number): number {
+  const rate = parseFloat(process.env.AR_USD_RATE || '1300')
+  const result = value / (isNaN(rate) || rate <= 0 ? 1300 : rate)
+  return Math.round(result * 100) / 100
+}

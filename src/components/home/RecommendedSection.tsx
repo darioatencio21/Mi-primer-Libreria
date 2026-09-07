@@ -1,15 +1,9 @@
 import Link from 'next/link'
 import { FormatFilterShelf } from '@/components/home/FormatFilterShelf'
-import { RotatingOpinions } from '@/components/home/RotatingOpinions'
-import { getNewReleases, getReviewPreviewsByBooks } from '@/lib/data'
+import { getNewReleases } from '@/lib/data'
 
 export async function RecommendedSection() {
   const libros = await getNewReleases(8)
-  const reviewPreviews = await getReviewPreviewsByBooks(libros)
-
-  const opinions = Object.values(reviewPreviews).filter(
-    (preview): preview is NonNullable<typeof preview> => preview !== null
-  )
 
   return (
     <section className="py-[var(--space-24)] bg-bg-muted">
@@ -26,10 +20,8 @@ export async function RecommendedSection() {
           </Link>
         </div>
 
-        {opinions.length > 0 && <RotatingOpinions items={opinions} />}
-
         {libros.length > 0 && (
-          <FormatFilterShelf books={libros} variant="grid" reviewPreviews={reviewPreviews} />
+          <FormatFilterShelf books={libros} variant="grid" />
         )}
       </div>
     </section>

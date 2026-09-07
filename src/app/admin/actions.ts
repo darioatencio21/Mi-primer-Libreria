@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import {
   authors as authorsTable,
@@ -12,13 +12,13 @@ import {
   bookTags,
   categories as categoriesTable,
   orders,
-  reviews as reviewsTable,
   settings as settingsTable,
 } from '@/lib/db/schema'
 import {
   CHECKOUT_SETTINGS_KEY,
   normalizeCheckoutConfig,
 } from '@/lib/checkout-config'
+import { arsToUsd } from '@/lib/format'
 import {
   verifyAdminPassword,
   createAdminSession,
@@ -109,8 +109,8 @@ export async function crearLibro(
         authorId: autorId,
         categoryId: categoriaId,
         description: String(formData.get('description') ?? ''),
-        price: toNum(formData.get('price')),
-        discountPrice: toNumOrNull(formData.get('discount_price')),
+        price: arsToUsd(toNum(formData.get('price'))),
+        discountPrice: toNumOrNull(formData.get('discount_price')) != null ? arsToUsd(toNumOrNull(formData.get('discount_price'))!) : null,
         discountPercentage: toIntOrNull(formData.get('discount_percentage')),
         coverImageUrl: String(formData.get('cover_image') ?? '').trim(),
         isbn,
@@ -164,8 +164,8 @@ export async function actualizarLibro(
         authorId: autorId,
         categoryId: categoriaId,
         description: String(formData.get('description') ?? ''),
-        price: toNum(formData.get('price')),
-        discountPrice: toNumOrNull(formData.get('discount_price')),
+        price: arsToUsd(toNum(formData.get('price'))),
+        discountPrice: toNumOrNull(formData.get('discount_price')) != null ? arsToUsd(toNumOrNull(formData.get('discount_price'))!) : null,
         discountPercentage: toIntOrNull(formData.get('discount_percentage')),
         coverImageUrl: String(formData.get('cover_image') ?? '').trim(),
         isbn,
@@ -211,10 +211,10 @@ async function replaceFormats(bookId: string, formData: FormData): Promise<void>
   await db.delete(bookFormats).where(eq(bookFormats.bookId, bookId))
   const rows = FORMAT_TYPES
     .map((tipo) => {
-      const price = toNumOrNull(formData.get(`format_${tipo}_price`))
+      const ars = toNumOrNull(formData.get(`format_${tipo}_price`))
       const stock = toIntOrNull(formData.get(`format_${tipo}_stock`))
-      if (price == null || price <= 0) return null
-      return { bookId, type: tipo, price, stock: stock ?? 0 }
+      if (ars == null || ars <= 0) return null
+      return { bookId, type: tipo, price: arsToUsd(ars), stock: stock ?? 0 }
     })
     .filter((r): r is NonNullable<typeof r> => r != null)
   if (rows.length > 0) {
@@ -388,7 +388,7 @@ export async function guardarConfiguracionCheckout(
       ...m,
       label: String(formData.get(`shipping_${m.id}_label`) ?? '').trim() || m.label,
       time: String(formData.get(`shipping_${m.id}_time`) ?? '').trim() || m.time,
-      price: toNum(formData.get(`shipping_${m.id}_price`)),
+      price: arsToUsd(toNum(formData.get(`shipping_${m.id}_price`))),
     }))
 
     const paymentMethods = current.paymentMethods.map((m) => ({
@@ -422,102 +422,6 @@ export async function guardarConfiguracionCheckout(
     return { ok: true }
   } catch (err) {
     return { ok: false, message: `Error al guardar: ${messageOf(err)}` }
-  }
-}
-
-// ---------- RESEÑAS ----------
-
-async function refreshBookRating(bookId: string | null): Promise<void> {
-  if (!bookId) return
-  const [agg] = await db
-    .select({
-      avg: sql<string>`round(coalesce(avg(${reviewsTable.rating}), 0)::numeric, 2)`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(reviewsTable)
-    .where(eq(reviewsTable.bookId, bookId))
-
-  await db
-    .update(booksTable)
-    .set({
-      rating: Number(agg?.avg ?? 0),
-      reviewCount: agg?.count ?? 0,
-    })
-    .where(eq(booksTable.id, bookId))
-}
-
-export async function crearReseña(formData: FormData): Promise<ActionResult> {
-  await assertAdmin()
-  try {
-    const bookId = String(formData.get('book') ?? '').trim() || null
-    const userName = String(formData.get('userName') ?? '').trim()
-    const rating = toInt(formData.get('rating'))
-    const title = String(formData.get('title') ?? '').trim().slice(0, 120)
-    const content = String(formData.get('content') ?? '').trim().slice(0, 2000)
-
-    if (!userName) return { ok: false, message: 'El nombre del cliente es obligatorio.' }
-    if (rating < 1 || rating > 5) {
-      return { ok: false, message: 'La calificación debe ser entre 1 y 5.' }
-    }
-    if (!content) return { ok: false, message: 'El comentario es obligatorio.' }
-
-    await db.insert(reviewsTable).values({ bookId, userName, rating, title: title || null, content })
-
-    if (bookId) await refreshBookRating(bookId)
-    revalidatePath('/admin/resenas')
-    revalidatePath('/')
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, message: `Error: ${messageOf(err)}` }
-  }
-}
-
-export async function actualizarReseña(id: string, formData: FormData): Promise<ActionResult> {
-  await assertAdmin()
-  try {
-    const [existing] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id)).limit(1)
-    if (!existing) return { ok: false, message: 'Reseña no encontrada.' }
-
-    const bookId =
-      String(formData.get('book') ?? '').trim() || null
-    const userName = String(formData.get('userName') ?? '').trim()
-    const rating = toInt(formData.get('rating'))
-    const title = String(formData.get('title') ?? '').trim().slice(0, 120)
-    const content = String(formData.get('content') ?? '').trim().slice(0, 2000)
-
-    if (!userName) return { ok: false, message: 'El nombre del cliente es obligatorio.' }
-    if (rating < 1 || rating > 5) {
-      return { ok: false, message: 'La calificación debe ser entre 1 y 5.' }
-    }
-
-    await db
-      .update(reviewsTable)
-      .set({ bookId, userName, rating, title: title || null, content })
-      .where(eq(reviewsTable.id, id))
-
-    if (existing.bookId !== bookId && existing.bookId) await refreshBookRating(existing.bookId)
-    if (bookId) await refreshBookRating(bookId)
-    revalidatePath('/admin/resenas')
-    revalidatePath('/')
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, message: `Error: ${messageOf(err)}` }
-  }
-}
-
-export async function eliminarReseña(id: string): Promise<ActionResult> {
-  await assertAdmin()
-  try {
-    const [existing] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id)).limit(1)
-    if (!existing) return { ok: false, message: 'Reseña no encontrada.' }
-
-    await db.delete(reviewsTable).where(eq(reviewsTable.id, id))
-    if (existing.bookId) await refreshBookRating(existing.bookId)
-    revalidatePath('/admin/resenas')
-    revalidatePath('/')
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, message: `Error: ${messageOf(err)}` }
   }
 }
 

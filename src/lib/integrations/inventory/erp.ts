@@ -6,7 +6,7 @@ import { externalRequest } from '../http'
 /**
  * Adaptador de inventario hacia un ERP / sistema de logística SaaS EXTERNO
  * (el que desarrollaron ustedes). Delega la consulta/reserva de stock al
- * servicio remoto en lugar de a Supabase.
+ * servicio remoto externo.
  *
  * Contrato HTTP esperado:
  *

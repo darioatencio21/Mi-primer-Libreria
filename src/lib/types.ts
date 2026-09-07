@@ -62,13 +62,6 @@ export interface Review {
   helpfulCount: number
 }
 
-export interface ReviewPreview {
-  content: string
-  userName: string
-  rating: number
-  bookTitle?: string
-}
-
 export interface CartItem {
   book: Book
   format: BookFormat['type']

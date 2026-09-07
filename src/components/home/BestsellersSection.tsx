@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { FormatFilterShelf } from '@/components/home/FormatFilterShelf'
-import { getBestsellers, getReviewPreviewsByBooks } from '@/lib/data'
+import { getBestsellers } from '@/lib/data'
 
 export async function BestsellersSection() {
   const bestsellers = await getBestsellers(10)
-  const reviewPreviews = await getReviewPreviewsByBooks(bestsellers)
 
   return (
     <section className="pt-[var(--space-16)] md:pt-[var(--space-24)] pb-[var(--space-24)]">
@@ -22,7 +21,7 @@ export async function BestsellersSection() {
         </div>
 
         {bestsellers.length > 0 && (
-          <FormatFilterShelf books={bestsellers} variant="carousel" reviewPreviews={reviewPreviews} />
+          <FormatFilterShelf books={bestsellers} variant="carousel" />
         )}
       </div>
     </section>

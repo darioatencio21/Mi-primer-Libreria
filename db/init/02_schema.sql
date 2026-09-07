@@ -1,7 +1,7 @@
 -- ============================================================
 --  Esquema DDL del proyecto "Tus Libros Ya" (fuente de verdad local)
---  Tablas en inglés (mismo esquema que usaba el frontend vía Supabase),
---  + auth propia: users y sessions (reemplazan auth.users de Supabase).
+--  Tablas en inglés (esquema que consume el frontend),
+--  + auth propia: users y sessions (auth interno de la app).
 --  Sin RLS: la app se conecta con un único rol de aplicación.
 -- ============================================================
 

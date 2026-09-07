@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { getAllAuthors } from '@/lib/data'
-import { AuthorAvatar } from '@/components/ui/AuthorAvatar'
+import { AuthorCard } from '@/components/ui/AuthorCard'
 
 export const metadata: Metadata = {
   title: 'Autores',
@@ -32,21 +31,13 @@ export default async function AutoresPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[var(--space-6)] md:gap-[var(--space-8)]">
             {authors.map((author) => (
-              <Link
+              <AuthorCard
                 key={author.id}
-                href={`/autores/${author.slug}`}
-                className="flex flex-col items-center text-center group"
-              >
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-bg-muted border-2 border-border-subtle overflow-hidden mb-[var(--space-3)] md:mb-[var(--space-4)] group-hover:border-brand-primary transition-colors duration-200">
-                  <AuthorAvatar name={author.name} photo={author.photo} variant="circle" sizes="128px" />
-                </div>
-                <h2 className="text-sm md:text-base font-semibold text-text-primary mb-[var(--space-1)] group-hover:text-brand-primary transition-colors duration-[var(--duration-micro)]">
-                  {author.name}
-                </h2>
-                <p className="text-xs text-text-tertiary">
-                  {author.bookCount} {author.bookCount === 1 ? 'libro' : 'libros'}
-                </p>
-              </Link>
+                author={author}
+                avatarClassName="w-24 h-24 md:w-32 md:h-32"
+                nameClassName="text-sm md:text-base"
+                sizes="128px"
+              />
             ))}
           </div>
         )}

@@ -28,11 +28,6 @@ export function generateProductJsonLd(book: Book) {
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: book.rating,
-      reviewCount: book.reviewCount,
-    },
   }
 }
 

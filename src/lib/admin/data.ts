@@ -10,7 +10,6 @@ import {
   categories as categoriesTable,
   orderItems,
   orders,
-  reviews as reviewsTable,
   settings as settingsTable,
   users as usersTable,
 } from '@/lib/db/schema'
@@ -20,6 +19,7 @@ import {
   normalizeCheckoutConfig,
   type CheckoutConfig,
 } from '@/lib/checkout-config'
+import { usdToArs } from '@/lib/format'
 import type { BookFormat } from '@/lib/types'
 
 /**
@@ -194,8 +194,8 @@ export async function listLibros(): Promise<AdminLibro[]> {
     categoria_id: row.categoryId,
     autorName: row.autorName ?? '-',
     categoriaName: row.categoriaName ?? '-',
-    price: row.price,
-    discount_price: row.discountPrice ?? null,
+    price: usdToArs(row.price),
+    discount_price: row.discountPrice != null ? usdToArs(row.discountPrice) : null,
     cover_image: row.coverImageUrl,
     isbn: row.isbn ?? '',
     stock: row.stock,
@@ -225,8 +225,8 @@ export async function getLibroParaEditar(id: string): Promise<AdminLibroEditable
     autor_id: row.authorId,
     categoria_id: row.categoryId,
     description: row.description,
-    price: row.price,
-    discount_price: row.discountPrice ?? null,
+    price: usdToArs(row.price),
+    discount_price: row.discountPrice != null ? usdToArs(row.discountPrice) : null,
     discount_percentage: row.discountPercentage ?? null,
     cover_image: row.coverImageUrl,
     isbn: row.isbn,
@@ -242,7 +242,7 @@ export async function getLibroParaEditar(id: string): Promise<AdminLibroEditable
     libro_formatos: formatRows.map((f) => ({
       id: f.id,
       format_type: f.type,
-      price: f.price,
+      price: usdToArs(f.price),
       stock: f.stock,
     })),
     libro_imagenes: imageRows.map((i) => ({ url: i.url })),
@@ -300,60 +300,13 @@ export async function getCategoriasConConteo(): Promise<AdminCategoria[]> {
   }))
 }
 
-export interface AdminReseña {
-  id: string
-  book: string | null
-  bookTitle: string
-  userName: string
-  rating: number
-  title: string
-  content: string
-  helpfulCount: number
-  created_at: string
-}
-
 export async function getCheckoutConfig(): Promise<CheckoutConfig> {
   const [row] = await db.select().from(settingsTable).where(eq(settingsTable.key, CHECKOUT_SETTINGS_KEY)).limit(1)
-  if (!row) return DEFAULT_CHECKOUT_CONFIG
-  return normalizeCheckoutConfig(row.value)
-}
-
-export async function getReseñasConLibro(): Promise<AdminReseña[]> {
-  const rows = await db
-    .select({
-      id: reviewsTable.id,
-      bookId: reviewsTable.bookId,
-      bookTitle: booksTable.title,
-      userName: reviewsTable.userName,
-      rating: reviewsTable.rating,
-      title: reviewsTable.title,
-      content: reviewsTable.content,
-      helpfulCount: reviewsTable.helpfulCount,
-      createdAt: reviewsTable.createdAt,
-    })
-    .from(reviewsTable)
-    .leftJoin(booksTable, eq(booksTable.id, reviewsTable.bookId))
-    .orderBy(desc(reviewsTable.createdAt))
-
-  return rows.map((row) => ({
-    id: row.id,
-    book: row.bookId ?? '',
-    bookTitle: row.bookTitle ?? '(Testimonio general)',
-    userName: row.userName,
-    rating: row.rating,
-    title: row.title ?? '',
-    content: row.content,
-    helpfulCount: row.helpfulCount,
-    created_at: row.createdAt,
-  }))
-}
-
-export async function listLibrosParaSeleccionar(): Promise<{ id: string; title: string }[]> {
-  const rows = await db
-    .select({ id: booksTable.id, title: booksTable.title })
-    .from(booksTable)
-    .orderBy(asc(booksTable.title))
-  return rows
+  const config = row ? normalizeCheckoutConfig(row.value) : DEFAULT_CHECKOUT_CONFIG
+  return {
+    ...config,
+    shippingMethods: config.shippingMethods.map((m) => ({ ...m, price: usdToArs(m.price) })),
+  }
 }
 
 export async function listPedidos(): Promise<AdminPedido[]> {

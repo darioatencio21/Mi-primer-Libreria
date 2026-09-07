@@ -12,6 +12,7 @@ import { TrustBadges } from '@/components/ui/TrustBadges'
 import { sanitizeInput } from '@/lib/sanitize'
 import { formatArs, usdToArs } from '@/lib/format'
 import { DEFAULT_CHECKOUT_CONFIG, type CheckoutConfig } from '@/lib/checkout-config'
+import { submitCheckout } from './actions'
 import type { CartItem as CartItemType, BookFormat } from '@/lib/types'
 
 type Step = 'shipping' | 'payment' | 'confirmation'
@@ -161,8 +162,11 @@ export default function CheckoutPage() {
   }
 
   const [placedItems, setPlacedItems] = useState<CartItemType[]>([])
+  const [orderNumber, setOrderNumber] = useState<string | null>(null)
+  const [placingOrder, setPlacingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const errors: Partial<Record<keyof typeof paymentData, string>> = {}
@@ -193,13 +197,48 @@ export default function CheckoutPage() {
     setPaymentErrors(errors)
     if (Object.values(errors).some(Boolean)) return
 
+    setPlacingOrder(true)
+    setOrderError(null)
+
+    const result = await submitCheckout({
+      email: shippingData.email,
+      fullName: shippingData.fullName,
+      street: shippingData.street,
+      city: shippingData.city,
+      postalCode: shippingData.postalCode,
+      country: shippingData.country,
+      phone: shippingData.phone,
+      shippingMethodId: shippingMethod,
+      items: items.map((item) => {
+        const price = formatPrice(item)
+        return {
+          bookId: item.book.id,
+          title: item.book.title,
+          format: item.format,
+          quantity: item.quantity,
+          price,
+        }
+      }),
+      subtotal,
+      shipping: shippingCost,
+      tax,
+      total,
+    })
+
+    setPlacingOrder(false)
+
+    if (!result.ok) {
+      setOrderError(result.message ?? 'No se pudo confirmar el pedido.')
+      return
+    }
+
     setPlacedItems(items)
+    setOrderNumber(result.orderNumber ?? '')
     clearCart()
     setCurrentStep('confirmation')
   }
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === currentStep)
-  const [orderNumber] = useState(() => Math.floor(Math.random() * 90000 + 10000))
 
   const formatPrice = (item: CartItemType) =>
     item.book.formats.find((f) => f.type === item.format)?.price ?? item.book.price
@@ -601,13 +640,20 @@ export default function CheckoutPage() {
                     variant="secondary"
                     size="lg"
                     onClick={() => setCurrentStep('shipping')}
+                    disabled={placingOrder}
                   >
                     Volver
                   </Button>
-                  <Button type="submit" size="lg" className="flex-1">
-                    Confirmar pedido
+                  <Button type="submit" size="lg" className="flex-1" loading={placingOrder}>
+                    {placingOrder ? 'Confirmando pedido…' : 'Confirmar pedido'}
                   </Button>
                 </div>
+
+                {orderError && (
+                  <p className="text-sm text-error bg-error-bg rounded-[var(--radius-md)] px-[var(--space-3)] py-[var(--space-3)]">
+                    {orderError}
+                  </p>
+                )}
 
                 <div className="pt-[var(--space-2)]">
                   <TrustBadges compact />
@@ -640,7 +686,7 @@ export default function CheckoutPage() {
                   ¡Gracias por tu pedido, {shippingData.fullName.split(' ')[0] || 'lector'}!
                 </h2>
                 <p className="text-base text-text-secondary mb-[var(--space-2)]">
-                  Pedido #{orderNumber}
+                  Pedido #{orderNumber ?? '—'}
                 </p>
                 <p className="text-sm text-text-tertiary mb-[var(--space-8)]">
                   Te enviamos los detalles a tu correo ({shippingData.email || 'tu email'}).

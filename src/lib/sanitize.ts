@@ -18,6 +18,6 @@ export function sanitizeInput(input: string): string {
     .trim()
 }
 
-export function sanitizeSearchQuery(query: string): string {
-  return sanitizeInput(query).slice(0, 200)
+export function sanitizeSearchQuery(query: string, maxLength = 50): string {
+  return sanitizeInput(query).slice(0, maxLength)
 }

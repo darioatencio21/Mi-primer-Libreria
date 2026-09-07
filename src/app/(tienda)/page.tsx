@@ -7,8 +7,6 @@ import {
   RecommendedSection,
   QuizSection,
   AuthorsSection,
-  WhyUsSection,
-  TestimonialsSection,
   NewsletterSection,
 } from '@/components/home'
 
@@ -25,8 +23,6 @@ export default function Home() {
       <QuizSection />
       <RecommendedSection />
       <AuthorsSection />
-      <WhyUsSection />
-      <TestimonialsSection />
       <NewsletterSection />
     </>
   )

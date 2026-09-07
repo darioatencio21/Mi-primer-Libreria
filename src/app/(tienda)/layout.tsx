@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants"
-import { PromoBar, Header, Footer } from "@/components/layout"
+import { PromoBar, Header, Footer, ScrollRestoration } from "@/components/layout"
 import { CartProvider } from "@/components/cart/CartProvider"
 
 export const metadata: Metadata = {
@@ -24,6 +24,7 @@ export default function TiendaLayout({ children }: { children: React.ReactNode }
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <ScrollRestoration />
       <CartProvider />
     </div>
   )
